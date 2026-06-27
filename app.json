@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "pinumapp",
+    "slug": "pinumapp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/pinum_logo.png",
+    "scheme": "pinumapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.abrar.pinumapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.abrar.pinumapp",
+      "versionCode": 1,
+      "usesCleartextTraffic": true,
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/pinum_logo.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./src/assets/pinum_logo.png"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./src/assets/pinum_logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "./plugins/withAndroidCertificates"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b0a6ec06-37a1-4fa4-a72f-a83dddf59d57"
+      }
+    },
+    "owner": "raiabrar",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/b0a6ec06-37a1-4fa4-a72f-a83dddf59d57"
+    }
+  }
+}
