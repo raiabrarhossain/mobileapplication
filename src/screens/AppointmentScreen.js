@@ -205,10 +205,11 @@ export default function AppointmentScreen({ navigation, route }) {
       {/* Header */}
       <LinearGradient colors={GRADIENT_COLORS} style={styles.header} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={16} color={COLORS.white} />
+          <Text style={styles.backBtnText}>Home</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t.title}</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 75 }} />
       </LinearGradient>
 
       {loading ? (
@@ -456,7 +457,20 @@ const styles = StyleSheet.create({
     elevation: 4
   },
   backBtn: {
-    padding: 5
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)'
+  },
+  backBtnText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginLeft: 5
   },
   headerTitle: {
     color: COLORS.white,

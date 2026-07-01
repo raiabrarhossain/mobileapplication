@@ -17,7 +17,9 @@ import {
   Text,
   TouchableOpacity,
   View,
-  RefreshControl
+  RefreshControl,
+  ActivityIndicator,
+  Animated
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChatbotIcon from '../components/ChatbotIcon';
@@ -130,12 +132,78 @@ export default function HomeScreen({ navigation, route }) {
 
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [isContactVisible, setIsContactVisible] = useState(false);
+  const [isComingSoonVisible, setIsComingSoonVisible] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [appLanguage, setAppLanguage] = useState('en');
 
   const [newsItems, setNewsItems] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  // Animated Custom Toast States & Helpers
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTranslateY = useRef(new Animated.Value(-50)).current;
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastTitle, setToastTitle] = useState('');
+  const toastTimeoutRef = useRef(null);
+
+  const showToast = (title, message) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToastTitle(title);
+    setToastMessage(message);
+    setToastVisible(true);
+
+    toastOpacity.setValue(0);
+    toastTranslateY.setValue(-50);
+
+    Animated.parallel([
+      Animated.timing(toastOpacity, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }),
+      Animated.spring(toastTranslateY, {
+        toValue: 0,
+        friction: 6,
+        tension: 80,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    toastTimeoutRef.current = setTimeout(() => {
+      hideToast();
+    }, 3500);
+  };
+
+  const hideToast = () => {
+    Animated.parallel([
+      Animated.timing(toastOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(toastTranslateY, {
+        toValue: -30,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setToastVisible(false);
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const getHospitalStatus = (timings) => {
     const now = new Date();
@@ -261,6 +329,7 @@ export default function HomeScreen({ navigation, route }) {
   }, [appLanguage, hospitalTimings]);
 
   const loadData = async (showRefreshedAlert = false) => {
+    setHasError(false);
     try {
       const [slider, news, timings] = await Promise.all([
         fetchAppSlider(),
@@ -277,13 +346,16 @@ export default function HomeScreen({ navigation, route }) {
         setHospitalTimings(timings);
       }
       if (showRefreshedAlert) {
-        Alert.alert(
+        showToast(
           appLanguage === 'ur' ? 'کامیابی' : 'Success',
           appLanguage === 'ur' ? 'مواد کامیابی سے تازہ کر دیا گیا ہے۔' : 'App content refreshed successfully!'
         );
       }
     } catch (error) {
       console.log('Error loading HomeScreen data:', error);
+      setHasError(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -371,6 +443,107 @@ export default function HomeScreen({ navigation, route }) {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" />
 
+      {/* Animated Custom Toast */}
+      {toastVisible && (
+        <Animated.View
+          style={[
+            styles.toastContainer,
+            {
+              opacity: toastOpacity,
+              transform: [{ translateY: toastTranslateY }],
+              top: insets.top + 10,
+            }
+          ]}
+        >
+          <LinearGradient
+            colors={['#27AE60', '#2ECC71']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.toastGradient}
+          >
+            <Ionicons name="checkmark-circle" size={26} color="#FFFFFF" />
+            <View style={styles.toastTextContainer}>
+              <Text style={[styles.toastTitle, appLanguage === 'ur' && fontsLoaded && { fontFamily: 'JameelNoori' }]}>{toastTitle}</Text>
+              <Text style={[styles.toastMessage, appLanguage === 'ur' && fontsLoaded && { fontFamily: 'JameelNoori' }]}>{toastMessage}</Text>
+            </View>
+            <TouchableOpacity onPress={hideToast} style={styles.toastCloseBtn} activeOpacity={0.7}>
+              <Ionicons name="close" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </LinearGradient>
+        </Animated.View>
+      )}
+
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <LinearGradient
+            colors={['#2D9CDB', '#8E44AD']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <MotiView
+            from={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'timing', duration: 1000 }}
+            style={styles.loadingLogoContainer}
+          >
+            <Image
+              source={require('../assets/pinum_logo.png')}
+              style={styles.loadingLogo}
+              contentFit="contain"
+            />
+          </MotiView>
+          <ActivityIndicator size="large" color="#FFFFFF" style={{ marginTop: 20 }} />
+          <Text style={styles.loadingTextEnglish}>Loading Hospital Portal...</Text>
+          <Text style={[styles.loadingTextUrdu, fontsLoaded && { fontFamily: 'JameelNoori' }]}>پینم کینسر ہسپتال پورٹل لوڈ ہو رہا ہے...</Text>
+        </View>
+      )}
+
+      {!isLoading && hasError && (
+        <View style={styles.errorOverlay}>
+          <LinearGradient
+            colors={['#2D9CDB', '#8E44AD']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <MotiView
+            from={{ opacity: 0, scale: 0.9, translateY: 20 }}
+            animate={{ opacity: 1, scale: 1, translateY: 0 }}
+            transition={{ type: 'spring', damping: 12 }}
+            style={styles.errorCard}
+          >
+            <Ionicons name="wifi-outline" size={50} color="#E74C3C" style={{ marginBottom: 15 }} />
+            <Text style={styles.errorTitle}>Connection Failed</Text>
+            <Text style={styles.errorTextEnglish}>Could not connect to hospital server. Please check your internet connection.</Text>
+            
+            <View style={styles.errorDivider} />
+            
+            <Text style={[styles.errorTitleUrdu, fontsLoaded && { fontFamily: 'JameelNoori' }]}>سرور سے رابطہ نہ ہو سکا</Text>
+            <Text style={[styles.errorTextUrdu, fontsLoaded && { fontFamily: 'JameelNoori' }]}>ہسپتال سرور سے رابطہ نہیں ہو سکا۔ برائے مہربانی اپنا انٹرنیٹ کنکشن چیک کریں۔</Text>
+            
+            <TouchableOpacity
+              style={styles.refreshAppBtn}
+              onPress={() => {
+                setIsLoading(true);
+                loadData();
+              }}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={GRADIENT_COLORS}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.refreshBtnGradient}
+              >
+                <Ionicons name="refresh-outline" size={20} color={COLORS.white} style={{ marginRight: 8 }} />
+                <Text style={styles.refreshBtnText}>Tap to Refresh / دوبارہ کوشش کریں</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </MotiView>
+        </View>
+      )}
+
       <LinearGradient
         colors={GRADIENT_COLORS}
         start={{ x: 0, y: 0 }}
@@ -455,12 +628,11 @@ export default function HomeScreen({ navigation, route }) {
                 <Ionicons name="log-out-outline" size={22} color={COLORS.white} />
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity 
-                style={styles.whatsappBtn}
-                onPress={() => Linking.openURL('https://wa.me/92419210171')}
+              <View 
+                style={[styles.whatsappBtn, { opacity: 0.9 }]}
               >
                 <Ionicons name="logo-whatsapp" size={24} color={COLORS.white} />
-              </TouchableOpacity>
+              </View>
             )}
           </View>
         </View>
@@ -636,7 +808,7 @@ export default function HomeScreen({ navigation, route }) {
             index={5}
             imageUri="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=600&auto=format&fit=crop"
             label={t.location}
-            onPress={() => Linking.openURL('https://www.google.com/maps/search/?api=1&query=PINUM+Cancer+Hospital+Faisalabad')}
+            onPress={() => navigation.navigate('Location', { language: appLanguage })}
           />
 
           <ImageGridItem
@@ -657,7 +829,7 @@ export default function HomeScreen({ navigation, route }) {
             index={8}
             imageUri="https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=600&auto=format&fit=crop"
             label={t.appointment}
-            onPress={() => Alert.alert(t.comingSoonTitle, t.comingSoonMessage)}
+            onPress={() => setIsComingSoonVisible(true)}
           />
         </View>
       </ScrollView>
@@ -889,6 +1061,47 @@ export default function HomeScreen({ navigation, route }) {
         </View>
       </Modal>
 
+      {/* Custom "Coming Soon" Modal */}
+      <Modal
+        visible={isComingSoonVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setIsComingSoonVisible(false)}
+      >
+        <View style={styles.centeredModalOverlay}>
+          <MotiView
+            from={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', damping: 15 }}
+            style={styles.comingSoonCard}
+          >
+            <LinearGradient
+              colors={GRADIENT_COLORS}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.comingSoonGradient}
+            >
+              <View style={styles.comingSoonIconContainer}>
+                <Ionicons name="calendar-outline" size={40} color={COLORS.primary} />
+              </View>
+              <Text style={styles.comingSoonTitleText}>{t.comingSoonTitle}</Text>
+              <Text style={styles.comingSoonMessageText}>
+                {appLanguage === 'ur'
+                  ? 'ہسپتال کی آن لائن اپائنٹمنٹ بکنگ سروس جلد دستیاب ہوگی۔ ہم اس پر کام کر رہے ہیں!'
+                  : 'We are working on setting up the online hospital appointment system. Stay tuned!'}
+              </Text>
+              <TouchableOpacity
+                style={styles.comingSoonCloseBtn}
+                onPress={() => setIsComingSoonVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.comingSoonCloseBtnText}>Okay, Got It</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </MotiView>
+        </View>
+      </Modal>
+
       <View style={[styles.bottomNav, { paddingBottom: insets.bottom > 0 ? insets.bottom : 10 }]}>
         <NavIcon icon="home" label={t.home} active />
         <NavIcon icon="document-text-outline" label={t.reports} onPress={handleReportsClick} />
@@ -901,20 +1114,30 @@ export default function HomeScreen({ navigation, route }) {
 const ImageGridItem = ({ imageUri, label, onPress, index }) => {
   const getIconInfo = () => {
     switch (index) {
-      case 0: return { source: require('../assets/icons/labs.png'), color: '#27AE60', grad: ['#E8F5E9', '#A5D6A7'] }; // Green
-      case 1: return { source: require('../assets/icons/doctors.png'), color: '#2980B9', grad: ['#E3F2FD', '#90CAF9'] };  // Blue
-      case 2: return { source: require('../assets/icons/departments.png'), color: '#8E44AD', grad: ['#F3E5F5', '#CE93D8'] }; // Purple
-      case 3: return { source: require('../assets/icons/timing.png'), color: '#D35400', grad: ['#FFF8E1', '#FFE082'] };     // Yellow/Orange
-      case 4: return { source: require('../assets/icons/news.png'), color: '#E74C3C', grad: ['#FFEBEE', '#FFCDD2'] }; // Red
-      case 5: return { source: require('../assets/icons/location.png'), color: '#16A085', grad: ['#E0F2F1', '#80CBC4'] };       // Teal
-      case 6: return { source: require('../assets/icons/contact.png'), color: '#2C3E50', grad: ['#ECEFF1', '#B0BEC5'] };      // Contact (Slate)
-      case 7: return { source: require('../assets/icons/gallery.png'), color: '#E67E22', grad: ['#FBE9E7', '#FFCCBC'] };    // Gallery (Orange)
-      case 8: return { source: require('../assets/icons/appointments.png'), color: '#16A085', grad: ['#E0F7FA', '#80DEEA'] }; // Appointment
-      default: return { source: null, color: '#7f8c8d', grad: ['#F5F5F5', '#E0E0E0'] };
+      case 0: return { lib: 'MaterialCommunityIcons', name: 'flask-outline', color: '#27AE60', grad: ['#E8F5E9', '#C8E6C9'] }; // Green (Labs)
+      case 1: return { lib: 'FontAwesome5', name: 'user-md', color: '#2980B9', grad: ['#E3F2FD', '#BBDEFB'] };  // Blue (Doctors)
+      case 2: return { lib: 'FontAwesome5', name: 'clinic-medical', color: '#8E44AD', grad: ['#F3E5F5', '#E1BEE7'] }; // Purple (Departments)
+      case 3: return { lib: 'Ionicons', name: 'time-outline', color: '#D35400', grad: ['#FFF8E1', '#FFE0B2'] };     // Orange (Timings)
+      case 4: return { lib: 'Ionicons', name: 'newspaper-outline', color: '#E74C3C', grad: ['#FFEBEE', '#FFCDD2'] }; // Red (News)
+      case 5: return { lib: 'Ionicons', name: 'location-outline', color: '#16A085', grad: ['#E0F2F1', '#B2DFDB'] };       // Teal (Location)
+      case 6: return { lib: 'Ionicons', name: 'chatbubbles-outline', color: '#2C3E50', grad: ['#ECEFF1', '#CFD8DC'] };      // Contact (Slate)
+      case 7: return { lib: 'Ionicons', name: 'images-outline', color: '#E67E22', grad: ['#FBE9E7', '#FFCCBC'] };    // Gallery (Orange)
+      case 8: return { lib: 'Ionicons', name: 'calendar-outline', color: '#16A085', grad: ['#E0F7FA', '#B2EBF2'] }; // Appointment (Cyan)
+      default: return { lib: 'Ionicons', name: 'grid-outline', color: '#7f8c8d', grad: ['#F5F5F5', '#E0E0E0'] };
     }
   };
 
   const iconInfo = getIconInfo();
+
+  const renderIcon = () => {
+    const size = 32;
+    if (iconInfo.lib === 'FontAwesome5') {
+      return <FontAwesome5 name={iconInfo.name} size={size - 2} color={iconInfo.color} />;
+    } else if (iconInfo.lib === 'MaterialCommunityIcons') {
+      return <MaterialCommunityIcons name={iconInfo.name} size={size + 2} color={iconInfo.color} />;
+    }
+    return <Ionicons name={iconInfo.name} size={size} color={iconInfo.color} />;
+  };
 
   return (
     <MotiView
@@ -924,26 +1147,16 @@ const ImageGridItem = ({ imageUri, label, onPress, index }) => {
       style={styles.imageGridItemContainer}
     >
       <TouchableOpacity style={styles.proCard} onPress={onPress} activeOpacity={0.9}>
-        {iconInfo.source ? (
-          <View style={styles.icon3dContainer}>
-            <LinearGradient
-              colors={iconInfo.grad || ['#FFFFFF', '#F2F4F4']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.icon3dGradient}
-            >
-              <Image
-                source={iconInfo.source}
-                style={styles.gridIcon}
-                contentFit="contain"
-              />
-            </LinearGradient>
-          </View>
-        ) : (
-          <View style={styles.gridIconPlaceholder}>
-            <Ionicons name="grid" size={32} color={iconInfo.color || '#7f8c8d'} />
-          </View>
-        )}
+        <View style={styles.icon3dContainer}>
+          <LinearGradient
+            colors={iconInfo.grad || ['#FFFFFF', '#F2F4F4']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.icon3dGradient}
+          >
+            {renderIcon()}
+          </LinearGradient>
+        </View>
         <Text style={styles.proCardLabel} numberOfLines={2}>
           {label}
         </Text>
@@ -1550,5 +1763,223 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: 'bold',
     textAlign: 'center'
+  },
+  centeredModalOverlay: {
+    flex: 1,
+    backgroundColor: COLORS.darkOverlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  comingSoonCard: {
+    width: '85%',
+    borderRadius: 24,
+    overflow: 'hidden',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 10 }
+  },
+  comingSoonGradient: {
+    padding: 30,
+    alignItems: 'center'
+  },
+  comingSoonIconContainer: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 }
+  },
+  comingSoonTitleText: {
+    color: COLORS.white,
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    letterSpacing: 0.5,
+    textAlign: 'center'
+  },
+  comingSoonMessageText: {
+    color: '#E3F2FD',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 25
+  },
+  comingSoonCloseBtn: {
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 25,
+    paddingVertical: 12,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+    elevation: 2
+  },
+  comingSoonCloseBtnText: {
+    color: COLORS.accent,
+    fontWeight: 'bold',
+    fontSize: 15
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999
+  },
+  loadingLogoContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    padding: 12
+  },
+  loadingLogo: {
+    width: '100%',
+    height: '100%'
+  },
+  loadingTextEnglish: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 15,
+    letterSpacing: 0.5
+  },
+  loadingTextUrdu: {
+    color: '#E3F2FD',
+    fontSize: 18,
+    marginTop: 8,
+    textAlign: 'center'
+  },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+    padding: 20
+  },
+  errorCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 30,
+    width: '90%',
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 }
+  },
+  errorTitle: {
+    color: '#2C3E50',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8
+  },
+  errorTextEnglish: {
+    color: '#7F8C8D',
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 15
+  },
+  errorDivider: {
+    width: '80%',
+    height: 1,
+    backgroundColor: '#ECEFF1',
+    marginVertical: 15
+  },
+  errorTitleUrdu: {
+    color: '#2C3E50',
+    fontSize: 22,
+    marginBottom: 8,
+    textAlign: 'center'
+  },
+  errorTextUrdu: {
+    color: '#7F8C8D',
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 25
+  },
+  refreshAppBtn: {
+    width: '100%',
+    borderRadius: 14,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 }
+  },
+  refreshBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20
+  },
+  refreshBtnText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14
+  },
+  toastContainer: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    zIndex: 10000,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 10,
+    overflow: 'hidden',
+  },
+  toastGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+  },
+  toastTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 8,
+  },
+  toastTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: 'bold',
+    letterSpacing: 0.3,
+  },
+  toastMessage: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 13,
+    marginTop: 2,
+    fontWeight: '500',
+    lineHeight: 17,
+  },
+  toastCloseBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   }
 });

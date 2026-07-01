@@ -110,10 +110,11 @@ export default function DepartmentsScreen({ navigation, route }) {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <LinearGradient colors={[COLORS.primary, COLORS.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={26} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={16} color={COLORS.white} />
+          <Text style={styles.backBtnText}>Home</Text>
         </TouchableOpacity>
         <MotiText style={styles.headerTitle}>{t.title}</MotiText>
-        <View style={{ width: 26 }} />
+        <View style={{ width: 75 }} />
       </LinearGradient>
 
       <View style={styles.content}>
@@ -138,7 +139,22 @@ export default function DepartmentsScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 22, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, elevation: 8 },
-  backBtn: { padding: 5 },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)'
+  },
+  backBtnText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginLeft: 5
+  },
   headerTitle: { color: COLORS.white, fontSize: 22, fontWeight: 'bold' },
   content: { flex: 1 },
   centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },

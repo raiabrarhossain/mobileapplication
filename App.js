@@ -15,6 +15,7 @@ import ChatbotScreen from './src/screens/ChatbotScreen';
 import SplashScreen from './src/screens/SplashScreen';
 import GalleryScreen from './src/screens/GalleryScreen';
 import AppointmentScreen from './src/screens/AppointmentScreen';
+import LocationScreen from './src/screens/LocationScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -40,6 +41,7 @@ export default function App() {
         {/* New Screens */}
         <Stack.Screen name="Gallery" component={GalleryScreen} />
         <Stack.Screen name="Appointment" component={AppointmentScreen} />
+        <Stack.Screen name="Location" component={LocationScreen} />
 
       </Stack.Navigator>
     </NavigationContainer>

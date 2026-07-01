@@ -244,7 +244,8 @@ export default function NewsScreen({ navigation, route }) {
             onPress={handleBack}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={26} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={16} color="#FFFFFF" />
+            <Text style={styles.backButtonText}>Home</Text>
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>{t.title}</Text>
@@ -316,12 +317,22 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     zIndex: 10,
-    elevation: 10,
+    elevation: 10
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginLeft: 5
   },
 
   headerTitle: {
@@ -333,7 +344,7 @@ const styles = StyleSheet.create({
   },
 
   rightPlaceholder: {
-    width: 48,
+    width: 75,
     height: 48,
   },
 

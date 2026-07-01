@@ -151,10 +151,11 @@ export default function GalleryScreen({ navigation, route }) {
         style={styles.header}
       >
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={26} color="#FFFFFF" />
+          <Ionicons name="arrow-back" size={16} color="#FFFFFF" />
+          <Text style={styles.backBtnText}>Home</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t.title}</Text>
-        <View style={{ width: 26 }} />
+        <View style={{ width: 75 }} />
       </LinearGradient>
 
       {/* Grid List */}
@@ -221,7 +222,20 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 }
   },
   backBtn: {
-    padding: 5
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)'
+  },
+  backBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginLeft: 5
   },
   headerTitle: {
     color: '#FFFFFF',

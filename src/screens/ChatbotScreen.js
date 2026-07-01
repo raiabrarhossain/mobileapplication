@@ -627,7 +627,8 @@ export default function ChatbotScreen({ navigation, route }) {
       {/* Header */}
       <LinearGradient colors={GRADIENT_COLORS} style={styles.header} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={16} color={COLORS.white} />
+          <Text style={styles.backBtnText}>Home</Text>
         </TouchableOpacity>
         <View style={styles.botHeaderInfo}>
           <View style={styles.avatarContainer}>
@@ -774,8 +775,21 @@ const styles = StyleSheet.create({
     elevation: 4
   },
   backBtn: {
-    padding: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     marginRight: 10
+  },
+  backBtnText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginLeft: 5
   },
   botHeaderInfo: {
     flexDirection: 'row',

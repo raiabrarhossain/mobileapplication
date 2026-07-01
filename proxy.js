@@ -6,8 +6,8 @@ const https = require('https');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const PORT = 3000;
-const TARGET_HOST = 'localhost';
-const TARGET_PORT = 7059;
+const TARGET_HOST = 'www.pinum.org.pk';
+const TARGET_PORT = 443;
 
 const server = http.createServer((req, res) => {
   console.log(`[Proxy] ${req.method} ${req.url}`);

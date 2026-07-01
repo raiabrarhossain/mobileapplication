@@ -146,7 +146,8 @@ export default function TimingsScreen({ navigation, route }) {
         style={styles.header}
       >
         <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={26} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={16} color={COLORS.white} />
+          <Text style={styles.backBtnText}>Home</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t.title}</Text>
         <TouchableOpacity onPress={loadTimings} style={styles.refreshBtn}>
@@ -333,7 +334,20 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 }
   },
   backBtn: {
-    padding: 5
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)'
+  },
+  backBtnText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginLeft: 5
   },
   refreshBtn: {
     padding: 5

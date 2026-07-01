@@ -16,16 +16,24 @@ const getExpoHostIp = () => {
 const getLocalProxyBaseUrl = () => {
   if (Platform.OS === 'web') return 'http://localhost:3000';
 
+  // For Android emulator loopback to host
+  if (Platform.OS === 'android') {
+    const hostIp = getExpoHostIp();
+    if (hostIp) {
+      return `http://${hostIp}:3000`;
+    }
+    return 'http://10.0.2.2:3000';
+  }
+
   const hostIp = getExpoHostIp();
   if (hostIp) {
     return `http://${hostIp}:3000`;
   }
 
-  if (Platform.OS === 'android') return 'http://10.0.2.2:3000';
   return 'http://localhost:3000';
 };
 
-const API_MODE = 'LOCAL_PROXY';
+const API_MODE = __DEV__ ? 'LOCAL_PROXY' : 'LIVE_DIRECT';
 
 const API_CONFIG = {
   LOCAL_PROXY: {
@@ -33,8 +41,8 @@ const API_CONFIG = {
     FILE_BASE_URL: getLocalProxyBaseUrl(),
   },
   LIVE_DIRECT: {
-    BASE_URL: 'https://pinum.org.pk/api',
-    FILE_BASE_URL: 'https://pinum.org.pk',
+    BASE_URL: 'https://www.pinum.org.pk/api',
+    FILE_BASE_URL: 'https://www.pinum.org.pk',
   },
 };
 
@@ -715,7 +723,7 @@ export const fetchDepartments = async () => {
 
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('Departments Error:', error);
+    console.log('Departments Error:', error?.message || error);
     return [];
   }
 };
@@ -737,7 +745,7 @@ export const fetchExpertsByDepartment = async (departmentId) => {
 
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('Experts Error:', error);
+    console.log('Experts Error:', error?.message || error);
     return [];
   }
 };
@@ -763,7 +771,7 @@ export const fetchNews = async () => {
       .map((item, index) => normalizeNews(item, index))
       .filter((item) => item.isActive === true || item.isActive === 'true' || item.isActive === 1);
   } catch (error) {
-    console.error('News Error:', error);
+    console.log('News Error:', error?.message || error);
     return [];
   }
 };
@@ -807,7 +815,7 @@ export const fetchPopupNotification = async () => {
 
     return data;
   } catch (error) {
-    console.error('Popup Error:', error);
+    console.log('Popup Error:', error?.message || error);
     return null;
   }
 };
@@ -991,7 +999,7 @@ export const fetchAppSlider = async () => {
       return item;
     });
   } catch (error) {
-    console.error('fetchAppSlider Error:', error);
+    console.log('fetchAppSlider Error:', error?.message || error);
     return [];
   }
 };
@@ -1019,7 +1027,7 @@ export const fetchAppGallery = async () => {
       return item;
     });
   } catch (error) {
-    console.error('fetchAppGallery Error:', error);
+    console.log('fetchAppGallery Error:', error?.message || error);
     return [];
   }
 };

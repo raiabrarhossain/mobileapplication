@@ -323,7 +323,8 @@ export default function LabRatesScreen({ navigation, route }) {
       >
         <View style={styles.headerTop}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+                <Ionicons name="arrow-back" size={16} color={COLORS.white} />
+                <Text style={styles.backBtnText}>Home</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>{t.title}</Text>
             <View style={styles.spacer} />
@@ -474,8 +475,23 @@ const styles = StyleSheet.create({
   },
   headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   headerTitle: { color: COLORS.white, fontSize: 20, fontWeight: 'bold' },
-  backBtn: { padding: 5 },
-  spacer: { width: 24 },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)'
+  },
+  backBtnText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginLeft: 5
+  },
+  spacer: { width: 75 },
 
   searchContainer: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,

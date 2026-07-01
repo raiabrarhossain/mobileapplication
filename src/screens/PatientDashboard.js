@@ -386,7 +386,7 @@ export default function PatientDashboard({ navigation, route }) {
       >
         <View style={styles.headerTopRow}>
           <TouchableOpacity style={styles.homeBtn} onPress={handleGoHome}>
-            <Ionicons name="arrow-back" size={20} color={COLORS.white} />
+            <Ionicons name="arrow-back" size={16} color={COLORS.white} />
             <Text style={styles.homeBtnText}>Home</Text>
           </TouchableOpacity>
 
@@ -480,16 +480,18 @@ const styles = StyleSheet.create({
   homeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
 
   homeBtnText: {
     color: COLORS.white,
-    fontWeight: '600',
-    marginLeft: 4,
+    fontWeight: 'bold',
+    marginLeft: 5,
     fontSize: 13,
   },
 
