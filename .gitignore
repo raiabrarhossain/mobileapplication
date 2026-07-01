@@ -44,4 +44,5 @@ app-example
 
 # local build files and screenshots
 *.apk
-*.png
+emulator_screen.png
+current_screen.png
