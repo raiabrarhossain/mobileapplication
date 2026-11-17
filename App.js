@@ -16,6 +16,7 @@ import SplashScreen from './src/screens/SplashScreen';
 import GalleryScreen from './src/screens/GalleryScreen';
 import AppointmentScreen from './src/screens/AppointmentScreen';
 import LocationScreen from './src/screens/LocationScreen';
+import PunjabCardScreen from './src/screens/PunjabCardScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -42,6 +43,7 @@ export default function App() {
         <Stack.Screen name="Gallery" component={GalleryScreen} />
         <Stack.Screen name="Appointment" component={AppointmentScreen} />
         <Stack.Screen name="Location" component={LocationScreen} />
+        <Stack.Screen name="PunjabCard" component={PunjabCardScreen} />
 
       </Stack.Navigator>
     </NavigationContainer>

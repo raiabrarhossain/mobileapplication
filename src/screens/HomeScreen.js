@@ -23,6 +23,8 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChatbotIcon from '../components/ChatbotIcon';
+import { HOME_SAMPLING_POSTER_BASE64 } from '../assets/home_sampling_poster_base64';
+import { PUNJAB_HEALTH_CARD_BASE64 } from '../assets/punjab_health_card_base64';
 import { fetchAppSlider, fetchNews, fetchHospitalTimings } from '../services/api';
 
 const { width } = Dimensions.get('window');
@@ -72,7 +74,20 @@ const TRANSLATIONS = {
     chooseLanguage: 'Choose Language',
     selectLangPrompt: 'Please select your preferred language:',
     comingSoonTitle: 'Coming Soon',
-    comingSoonMessage: 'Online Appointment booking feature is coming soon!'
+    comingSoonMessage: 'Online Appointment booking feature is coming soon!',
+    homeSamplingTitle: 'Home Lab Sampling',
+    homeSamplingBadge: 'SPECIAL SERVICE',
+    homeSamplingSub: 'Quality Lab Tests At Your Doorstep',
+    homeSamplingCharges: 'Rs. 500 Only',
+    accurateReports: 'Accurate Reports',
+    affordableRate: 'Affordable Rates',
+    timeSaving: 'Time Saving',
+    bookSampling: 'Book: 0336-1634118',
+    sehatCardTitle: 'Punjab Health Card',
+    sehatCardSub: 'Free Cancer Treatment Under Punjab Card',
+    sehatCardBadge: 'SEHAT SAHULAT • 100% FREE',
+    sehatCardLimit: 'Rs. 1,000,000 Limit',
+    sehatCardBtn: 'Complete Guide & Steps'
   },
   ur: {
     welcome: 'خوش آمدید',
@@ -103,7 +118,20 @@ const TRANSLATIONS = {
     chooseLanguage: 'زبان منتخب کریں',
     selectLangPrompt: 'براہ کرم اپنی پسندیدہ زبان منتخب کریں:',
     comingSoonTitle: 'جلد آ رہا ہے',
-    comingSoonMessage: 'آن لائن اپائنٹمنٹ بکنگ کی سہولت جلد دستیاب ہوگی۔'
+    comingSoonMessage: 'آن لائن اپائنٹمنٹ بکنگ کی سہولت جلد دستیاب ہوگی۔',
+    homeSamplingTitle: 'گھر بیٹھے لیب ٹیسٹ',
+    homeSamplingBadge: 'خصوصی سہولت',
+    homeSamplingSub: 'اب گھر بیٹھے معیاری لیب ٹیسٹ کروائیں',
+    homeSamplingCharges: 'صرف 500 روپے',
+    accurateReports: 'مستند رپورٹس',
+    affordableRate: 'رعایتی ریٹس',
+    timeSaving: 'وقت کی بچت',
+    bookSampling: 'بکنگ: 0336-1634118',
+    sehatCardTitle: 'پنجاب صحت کارڈ',
+    sehatCardSub: 'پنجاب صحت کارڈ پر کینسر کا مکمل مفت علاج',
+    sehatCardBadge: 'صحت سہولت پروگرام • 100% مفت',
+    sehatCardLimit: 'سالانہ 10 لاکھ روپے حد',
+    sehatCardBtn: 'رہنمائی اور مراحل دیکھیں'
   }
 };
 
@@ -133,6 +161,7 @@ export default function HomeScreen({ navigation, route }) {
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [isContactVisible, setIsContactVisible] = useState(false);
   const [isComingSoonVisible, setIsComingSoonVisible] = useState(false);
+  const [isHomeSamplingVisible, setIsHomeSamplingVisible] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [appLanguage, setAppLanguage] = useState('en');
@@ -786,6 +815,173 @@ export default function HomeScreen({ navigation, route }) {
           </TouchableOpacity>
         </MotiView>
 
+        {/* Punjab Health Card Featured Hero Banner */}
+        <MotiView
+          from={{ opacity: 0, translateY: 15 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'timing', duration: 500, delay: 120 }}
+          style={{ marginBottom: 16 }}
+        >
+          <TouchableOpacity
+            activeOpacity={0.92}
+            onPress={() => navigation.navigate('PunjabCard', { language: appLanguage })}
+          >
+            <LinearGradient
+              colors={['#073B25', '#0E623B', '#178A53']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.sehatCardBanner}
+            >
+              <View style={styles.sehatCardMainRow}>
+                {/* Left Content */}
+                <View style={styles.sehatCardTextCol}>
+                  <View style={styles.sehatBadgeRow}>
+                    <View style={styles.sehatBadgePill}>
+                      <FontAwesome5 name="heartbeat" size={10} color="#073B25" />
+                      <Text style={styles.sehatBadgeText}>
+                        {t.sehatCardBadge}
+                      </Text>
+                    </View>
+                    <View style={styles.sehatLimitPill}>
+                      <Ionicons name="shield-checkmark" size={11} color="#FFE600" />
+                      <Text style={styles.sehatLimitText}>
+                        {t.sehatCardLimit}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.sehatHeadline}>
+                    {t.sehatCardSub}
+                  </Text>
+
+                  {/* Highlights Row */}
+                  <View style={styles.samplingPillsRow}>
+                    <View style={styles.samplingPillItem}>
+                      <Ionicons name="checkmark-circle" size={13} color="#00E5A3" />
+                      <Text style={styles.samplingPillText}>
+                        {appLanguage === 'ur' ? 'کیموتھراپی مفت' : 'Free Chemo & Meds'}
+                      </Text>
+                    </View>
+                    <View style={styles.samplingPillItem}>
+                      <Ionicons name="card-outline" size={13} color="#00E5A3" />
+                      <Text style={styles.samplingPillText}>
+                        {appLanguage === 'ur' ? 'تمام شناختی کارڈز' : 'All CNICs'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Action Button */}
+                  <View style={styles.sehatActionBtn}>
+                    <Ionicons name="document-text" size={13} color="#0E623B" />
+                    <Text style={styles.sehatActionText}>
+                      {t.sehatCardBtn}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={13} color="#0E623B" style={{ marginLeft: 2 }} />
+                  </View>
+                </View>
+
+                {/* Right Visual Infographic Thumbnail */}
+                <View style={styles.sehatThumbWrapper}>
+                  <Image
+                    source={{ uri: PUNJAB_HEALTH_CARD_BASE64 }}
+                    style={styles.sehatThumbImage}
+                    contentFit="cover"
+                  />
+                  <View style={styles.sehatThumbOverlay}>
+                    <View style={styles.sehatZoomPill}>
+                      <Ionicons name="shield-checkmark" size={10} color="#FFFFFF" />
+                      <Text style={styles.sehatZoomText}>Guide</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </MotiView>
+
+        {/* Home Sampling Featured Hero Card */}
+        <MotiView
+          from={{ opacity: 0, translateY: 15 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'timing', duration: 500, delay: 150 }}
+          style={{ marginBottom: 22 }}
+        >
+          <TouchableOpacity
+            activeOpacity={0.92}
+            onPress={() => setIsHomeSamplingVisible(true)}
+          >
+            <LinearGradient
+              colors={['#0B2265', '#163884', '#204E9E']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.homeSamplingCard}
+            >
+              <View style={styles.homeSamplingMainRow}>
+                {/* Left Content Column */}
+                <View style={styles.homeSamplingTextCol}>
+                  <View style={styles.samplingBadgeRow}>
+                    <View style={styles.samplingBadge}>
+                      <Text style={styles.samplingBadgeText}>
+                        {t.homeSamplingBadge}
+                      </Text>
+                    </View>
+                    <View style={styles.samplingRatePill}>
+                      <Ionicons name="pricetag" size={11} color="#FFE600" />
+                      <Text style={styles.samplingRateText}>
+                        {t.homeSamplingCharges}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.homeSamplingHeadline}>
+                    {t.homeSamplingSub}
+                  </Text>
+
+                  {/* Highlights Row */}
+                  <View style={styles.samplingPillsRow}>
+                    <View style={styles.samplingPillItem}>
+                      <Ionicons name="checkmark-circle" size={13} color="#00E5A3" />
+                      <Text style={styles.samplingPillText}>{t.accurateReports}</Text>
+                    </View>
+                    <View style={styles.samplingPillItem}>
+                      <Ionicons name="shield-checkmark" size={13} color="#00E5A3" />
+                      <Text style={styles.samplingPillText}>{t.affordableRate}</Text>
+                    </View>
+                    <View style={styles.samplingPillItem}>
+                      <Ionicons name="time" size={13} color="#00E5A3" />
+                      <Text style={styles.samplingPillText}>{t.timeSaving}</Text>
+                    </View>
+                  </View>
+
+                  {/* Call to action button */}
+                  <View style={styles.samplingActionBtn}>
+                    <Ionicons name="call" size={13} color="#0B2265" />
+                    <Text style={styles.samplingActionText}>
+                      {t.bookSampling}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={13} color="#0B2265" style={{ marginLeft: 2 }} />
+                  </View>
+                </View>
+
+                {/* Right Visual Poster Thumbnail with Preview Badge */}
+                <View style={styles.samplingThumbWrapper}>
+                  <Image
+                    source={{ uri: HOME_SAMPLING_POSTER_BASE64 }}
+                    style={styles.samplingThumbImage}
+                    contentFit="cover"
+                  />
+                  <View style={styles.samplingThumbOverlay}>
+                    <View style={styles.samplingZoomPill}>
+                      <Ionicons name="expand" size={10} color="#FFFFFF" />
+                      <Text style={styles.samplingZoomText}>View</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </MotiView>
+
         <Text style={styles.sectionTitle}>{t.services}</Text>
 
         <View style={styles.gridContainer}>
@@ -1110,6 +1306,196 @@ export default function HomeScreen({ navigation, route }) {
         </View>
       </Modal>
 
+      {/* Home Sampling Full Details Modal */}
+      <Modal
+        visible={isHomeSamplingVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsHomeSamplingVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: '92%', paddingBottom: 12 }]}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <View style={styles.modalIconCircle}>
+                  <MaterialCommunityIcons name="motorbike" size={24} color={COLORS.primary} />
+                </View>
+                <View style={{ marginLeft: 10, flex: 1 }}>
+                  <Text style={styles.modalTitle}>
+                    {appLanguage === 'ur' ? 'گھر بیٹھے لیب ٹیسٹ' : 'PINUM Home Sampling'}
+                  </Text>
+                  <Text style={styles.modalSubtitle}>
+                    {appLanguage === 'ur' ? 'معیاری لیب ٹیسٹ کی سہولت' : 'Doorstep Diagnostic Collection'}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setIsHomeSamplingVisible(false)} style={styles.closeBtn}>
+                <Ionicons name="close" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 25 }}>
+              {/* Official Poster Container */}
+              <View style={styles.posterCardWrapper}>
+                <Image
+                  source={{ uri: HOME_SAMPLING_POSTER_BASE64 }}
+                  style={styles.fullPosterImage}
+                  contentFit="contain"
+                />
+              </View>
+
+              {/* Service Details Banner */}
+              <View style={styles.serviceChargeBanner}>
+                <View style={styles.chargeIconWrap}>
+                  <Ionicons name="cash" size={22} color="#0B2265" />
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.chargeBannerTitle}>
+                    {appLanguage === 'ur' ? 'فکسڈ سروس چارجز' : 'Fixed Service Charges'}
+                  </Text>
+                  <Text style={styles.chargeBannerAmount}>
+                    {appLanguage === 'ur' ? 'صرف 500 روپے' : 'Rs. 500 /-'}
+                  </Text>
+                </View>
+                <View style={styles.tagWrap}>
+                  <Text style={styles.tagWrapText}>
+                    {appLanguage === 'ur' ? 'فیصل آباد' : 'Faisalabad'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* 3 Value Pillars */}
+              <View style={styles.valuePillarsRow}>
+                <View style={styles.valuePillar}>
+                  <Ionicons name="shield-checkmark" size={22} color="#27AE60" />
+                  <Text style={styles.pillarTitle}>{t.accurateReports}</Text>
+                  <Text style={styles.pillarSub}>
+                    {appLanguage === 'ur' ? 'سو فیصد مستند' : '100% Certified'}
+                  </Text>
+                </View>
+                <View style={styles.valuePillar}>
+                  <Ionicons name="wallet" size={22} color="#2980B9" />
+                  <Text style={styles.pillarTitle}>{t.affordableRate}</Text>
+                  <Text style={styles.pillarSub}>
+                    {appLanguage === 'ur' ? 'سرکاری ریٹس' : 'Standard Rates'}
+                  </Text>
+                </View>
+                <View style={styles.valuePillar}>
+                  <Ionicons name="flash" size={22} color="#E67E22" />
+                  <Text style={styles.pillarTitle}>{t.timeSaving}</Text>
+                  <Text style={styles.pillarSub}>
+                    {appLanguage === 'ur' ? 'وقت کی بچت' : 'No Waiting'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* How it works steps */}
+              <View style={styles.howItWorksCard}>
+                <Text style={styles.howItWorksTitle}>
+                  {appLanguage === 'ur' ? 'طریقہ کار (کیسے بک کروائیں؟)' : 'How It Works (Easy 4 Steps)'}
+                </Text>
+
+                <View style={styles.stepRow}>
+                  <View style={styles.stepNumWrap}><Text style={styles.stepNum}>1</Text></View>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepHead}>
+                      {appLanguage === 'ur' ? 'رابطہ کریں' : 'Call or WhatsApp'}
+                    </Text>
+                    <Text style={styles.stepDesc}>
+                      {appLanguage === 'ur' ? 'ہیلپ لائن 0336-1634118 پر کال کر کے نسخہ فراہم کریں۔' : 'Contact 0336-1634118 with your test prescription.'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.stepRow}>
+                  <View style={styles.stepNumWrap}><Text style={styles.stepNum}>2</Text></View>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepHead}>
+                      {appLanguage === 'ur' ? 'ہوم وزٹ' : 'Phlebotomist Visit'}
+                    </Text>
+                    <Text style={styles.stepDesc}>
+                      {appLanguage === 'ur' ? 'ہمارا تربیت یافتہ عملہ مقررہ وقت پر آپ کے گھر پہنچے گا۔' : 'A trained medical technician visits your doorstep with sterile kits.'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.stepRow}>
+                  <View style={styles.stepNumWrap}><Text style={styles.stepNum}>3</Text></View>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepHead}>
+                      {appLanguage === 'ur' ? 'لیب میں ٹیسٹنگ' : 'Lab Processing'}
+                    </Text>
+                    <Text style={styles.stepDesc}>
+                      {appLanguage === 'ur' ? 'پینم ہسپتال کی جدید ترین لیب میں نمونوں کی مکمل جانچ۔' : 'Samples are safely analyzed in PINUM high-tech diagnostic lab.'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.stepRow}>
+                  <View style={styles.stepNumWrap}><Text style={styles.stepNum}>4</Text></View>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepHead}>
+                      {appLanguage === 'ur' ? 'ڈیجیٹل رپورٹ' : 'Get Digital Reports'}
+                    </Text>
+                    <Text style={styles.stepDesc}>
+                      {appLanguage === 'ur' ? 'ایپ کے پیشنٹ پورٹل پر اپنی سرکاری رپورٹ فوری ڈاؤن لوڈ کریں۔' : 'Download official PDF reports directly inside this app.'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Patient Welfare Society Note */}
+              <View style={styles.welfareNote}>
+                <Ionicons name="heart" size={16} color="#E74C3C" />
+                <Text style={styles.welfareText}>
+                  {appLanguage === 'ur'
+                    ? 'پینم پیشنٹ ویلفیئر سوسائٹی کے تعاون سے'
+                    : 'Supported by PINUM Patient Welfare Society'}
+                </Text>
+              </View>
+
+              {/* Direct Booking Actions */}
+              <View style={styles.modalActionButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.modalActionBtn, { backgroundColor: '#25D366' }]}
+                  onPress={() => Linking.openURL('https://wa.me/923361634118?text=Hello%20PINUM%20Hospital,%20I%20would%20like%20to%20book%20a%20Home%20Sampling%20service.')}
+                >
+                  <Ionicons name="logo-whatsapp" size={18} color="#FFFFFF" />
+                  <Text style={styles.modalActionBtnText}>
+                    {appLanguage === 'ur' ? 'واٹس ایپ بکنگ' : 'WhatsApp'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalActionBtn, { backgroundColor: '#0B2265' }]}
+                  onPress={() => Linking.openURL('tel:03361634118')}
+                >
+                  <Ionicons name="call" size={18} color="#FFFFFF" />
+                  <Text style={styles.modalActionBtnText}>
+                    {appLanguage === 'ur' ? '0336-1634118' : 'Call 0336-1634118'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.ratesShortcutBtn}
+                onPress={() => {
+                  setIsHomeSamplingVisible(false);
+                  navigation.navigate('LabRates', { language: appLanguage });
+                }}
+              >
+                <Ionicons name="flask" size={16} color={COLORS.primary} />
+                <Text style={styles.ratesShortcutText}>
+                  {appLanguage === 'ur' ? 'ٹیسٹ ریٹس کی فہرست دیکھیں' : 'Browse All Lab Rates (899+ Tests)'}
+                </Text>
+                <Ionicons name="arrow-forward" size={14} color={COLORS.primary} />
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       <View style={[styles.bottomNav, { paddingBottom: insets.bottom > 0 ? insets.bottom : 10 }]}>
         <NavIcon icon="home" label={t.home} active />
         <NavIcon icon="document-text-outline" label={t.reports} onPress={handleReportsClick} />
@@ -1377,7 +1763,7 @@ const styles = StyleSheet.create({
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 25,
+    marginBottom: 16,
     elevation: 5,
     shadowColor: '#000',
     shadowOpacity: 0.2,
@@ -1411,6 +1797,458 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: 'bold',
     fontSize: 13
+  },
+  sehatCardBanner: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    elevation: 6,
+    shadowColor: '#073B25',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+  },
+  sehatCardMainRow: {
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sehatCardTextCol: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  sehatBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
+  sehatBadgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFE600',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  sehatBadgeText: {
+    color: '#073B25',
+    fontSize: 9.5,
+    fontWeight: 'bold',
+    marginLeft: 4,
+    letterSpacing: 0.5,
+  },
+  sehatLimitPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 230, 0, 0.5)',
+  },
+  sehatLimitText: {
+    color: '#FFE600',
+    fontSize: 9.5,
+    fontWeight: 'bold',
+    marginLeft: 3,
+  },
+  sehatHeadline: {
+    color: COLORS.white,
+    fontSize: 14.5,
+    fontWeight: 'bold',
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  sehatActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  sehatActionText: {
+    color: '#0E623B',
+    fontWeight: 'bold',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  sehatThumbWrapper: {
+    width: 85,
+    height: 120,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#073B25',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 2,
+    borderColor: 'rgba(244, 196, 48, 0.4)',
+  },
+  sehatThumbImage: {
+    width: '100%',
+    height: '100%',
+  },
+  sehatThumbOverlay: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    right: 4,
+    alignItems: 'center',
+  },
+  sehatZoomPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(7, 59, 37, 0.9)',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+  },
+  sehatZoomText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: 'bold',
+    marginLeft: 2,
+  },
+  homeSamplingCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    elevation: 6,
+    shadowColor: '#0B2265',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+  },
+  homeSamplingMainRow: {
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  homeSamplingTextCol: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  samplingBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
+  samplingBadge: {
+    backgroundColor: '#FFE600',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  samplingBadgeText: {
+    color: '#0B2265',
+    fontSize: 10,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  samplingRatePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 230, 0, 0.4)',
+  },
+  samplingRateText: {
+    color: '#FFE600',
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  homeSamplingHeadline: {
+    color: COLORS.white,
+    fontSize: 14.5,
+    fontWeight: 'bold',
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  samplingPillsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    flexWrap: 'wrap',
+  },
+  samplingPillItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 10,
+    marginBottom: 4,
+  },
+  samplingPillText: {
+    color: '#E3F2FD',
+    fontSize: 10.5,
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  samplingActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  samplingActionText: {
+    color: '#0B2265',
+    fontWeight: 'bold',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  samplingThumbWrapper: {
+    width: 85,
+    height: 120,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  samplingThumbImage: {
+    width: '100%',
+    height: '100%',
+  },
+  samplingThumbOverlay: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    right: 4,
+    alignItems: 'center',
+  },
+  samplingZoomPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(11, 34, 101, 0.85)',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+  },
+  samplingZoomText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: 'bold',
+    marginLeft: 2,
+  },
+  modalIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#EBF4FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
+  posterCardWrapper: {
+    width: '100%',
+    height: 380,
+    backgroundColor: '#0B2265',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginVertical: 12,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  fullPosterImage: {
+    width: '100%',
+    height: '100%',
+  },
+  serviceChargeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F7FF',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#B9DAFB',
+    marginBottom: 14,
+  },
+  chargeIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#D6E9FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chargeBannerTitle: {
+    fontSize: 12,
+    color: '#3B5998',
+    fontWeight: '600',
+  },
+  chargeBannerAmount: {
+    fontSize: 18,
+    color: '#0B2265',
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  tagWrap: {
+    backgroundColor: '#0B2265',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  tagWrapText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  valuePillarsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  valuePillar: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    padding: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginHorizontal: 3,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  pillarTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  pillarSub: {
+    fontSize: 9.5,
+    color: COLORS.textLight,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  howItWorksCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 14,
+  },
+  howItWorksTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#0B2265',
+    marginBottom: 12,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+    alignItems: 'flex-start',
+  },
+  stepNumWrap: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#0B2265',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 1,
+  },
+  stepNum: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  stepContent: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  stepHead: {
+    fontSize: 12.5,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  stepDesc: {
+    fontSize: 11,
+    color: COLORS.textLight,
+    marginTop: 1,
+    lineHeight: 16,
+  },
+  welfareNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    marginBottom: 14,
+  },
+  welfareText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#555',
+    marginLeft: 6,
+  },
+  modalActionButtonsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  modalActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 13,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  modalActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginLeft: 6,
+  },
+  ratesShortcutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EDF2F7',
+    paddingVertical: 11,
+    borderRadius: 10,
+  },
+  ratesShortcutText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.primary,
+    marginHorizontal: 6,
   },
   sectionTitle: {
     fontSize: 18,
