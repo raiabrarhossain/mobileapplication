@@ -2,52 +2,31 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 // ======================================================
-// PINUM API CONFIGURATION - LOCAL + LIVE FINAL VERSION
+// PINUM API CONFIGURATION - DUAL-FALLBACK ARCHITECTURE
 // ======================================================
-// LOCAL_PROXY: Android emulator/local development through http://10.0.2.2:3000
-// LIVE_DIRECT: Final production APK through https://pinum.org.pk/api
-
-const getExpoHostIp = () => {
-  const hostUri = Constants.expoConfig?.hostUri || Constants.manifest?.debuggerHost || '';
-  if (!hostUri) return '';
-  return hostUri.split(':')[0];
-};
+// 1. LOCAL_PROXY: Android emulator/local bridge via host proxy (port 3000)
+// 2. LIVE_DIRECT: Direct production access to https://www.pinum.org.pk
+// Smart Dual-Fallback tries the fastest candidate and auto-switches if one fails or times out.
 
 const getLocalProxyBaseUrl = () => {
   if (Platform.OS === 'web') return 'http://localhost:3000';
-
-  // For Android emulator loopback to host
   if (Platform.OS === 'android') {
     return 'http://10.0.2.2:3000';
   }
-
   return 'http://localhost:3000';
 };
 
-const API_MODE = 'LIVE_DIRECT';
+const LOCAL_PROXY_ORIGIN = getLocalProxyBaseUrl();
+const LIVE_DIRECT_ORIGIN = 'https://www.pinum.org.pk';
 
-const API_CONFIG = {
-  LOCAL_PROXY: {
-    BASE_URL: `${getLocalProxyBaseUrl()}/api`,
-    FILE_BASE_URL: getLocalProxyBaseUrl(),
-  },
-  LIVE_DIRECT: {
-    BASE_URL: 'https://www.pinum.org.pk/api',
-    FILE_BASE_URL: 'https://www.pinum.org.pk',
-  },
-};
-
-const ACTIVE_CONFIG = API_CONFIG[API_MODE];
-
-const BASE_URL = ACTIVE_CONFIG.BASE_URL;
-const FILE_BASE_URL = ACTIVE_CONFIG.FILE_BASE_URL;
+const BASE_URL = `${LOCAL_PROXY_ORIGIN}/api`;
+const FILE_BASE_URL = LIVE_DIRECT_ORIGIN;
 
 const PUBLIC_HTTPS_TEST_API_URL = 'https://jsonplaceholder.typicode.com/todos/1';
-const NETWORK_TIMEOUT_MS = 20000;
+const NETWORK_TIMEOUT_MS = 6000;
 
-console.log('PINUM API_MODE:', API_MODE);
-console.log('PINUM ACTIVE BASE_URL:', BASE_URL);
-console.log('PINUM ACTIVE FILE_BASE_URL:', FILE_BASE_URL);
+console.log('PINUM BASE_URL:', BASE_URL);
+console.log('PINUM FILE_BASE_URL:', FILE_BASE_URL);
 
 // ======================================================
 // HEADERS
@@ -176,12 +155,21 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = NETWORK_TIMEOUT_M
   }
 };
 
+const getCandidateUrls = (targetUrl) => {
+  const candidates = [targetUrl];
+  if (targetUrl.includes('10.0.2.2:3000') || targetUrl.includes('localhost:3000')) {
+    candidates.push(targetUrl.replace(/http:\/\/(10\.0\.2\.2|localhost):3000/g, LIVE_DIRECT_ORIGIN));
+  } else if (targetUrl.includes('www.pinum.org.pk') || targetUrl.includes('pinum.org.pk')) {
+    candidates.push(targetUrl.replace(/https?:\/\/(www\.)?pinum\.org\.pk/g, LOCAL_PROXY_ORIGIN));
+  }
+  return candidates;
+};
+
 // ======================================================
-// MAIN API REQUEST
+// MAIN API REQUEST (SMART DUAL-FALLBACK)
 // ======================================================
 
 const apiRequest = async (url, options = {}, fallbackValue = null) => {
-  const startedAt = Date.now();
   const method = String(options?.method || 'GET').toUpperCase();
 
   const requestHeaders = cleanHeaders({
@@ -189,66 +177,79 @@ const apiRequest = async (url, options = {}, fallbackValue = null) => {
     ...(options.headers || {}),
   });
 
-  try {
-    console.log('================ API REQUEST START ================');
-    console.log('API MODE:', API_MODE);
-    console.log('API URL:', url);
-    console.log('API METHOD:', method);
-    console.log('API HEADERS:', requestHeaders);
+  const candidates = getCandidateUrls(url);
+  let lastError = null;
 
-    if (options?.body) {
-      console.log('API BODY:', options.body);
+  for (let i = 0; i < candidates.length; i++) {
+    const candidateUrl = candidates[i];
+    const startedAt = Date.now();
+
+    try {
+      console.log(`[API Attempt ${i + 1}/${candidates.length}] ${method} ${candidateUrl}`);
+
+      const response = await fetchWithTimeout(
+        candidateUrl,
+        {
+          ...options,
+          method,
+          headers: requestHeaders,
+        },
+        NETWORK_TIMEOUT_MS
+      );
+
+      const durationMs = Date.now() - startedAt;
+      console.log(`[API Response] Status: ${response.status} (${durationMs}ms) from ${candidateUrl}`);
+
+      const responseText = await response.text();
+      const data = parseJsonSafely(responseText, fallbackValue);
+
+      if (!response.ok) {
+        let message =
+          data?.message ||
+          data?.title ||
+          data?.error ||
+          (data?.errors ? Object.values(data.errors).flat().join(', ') : '') ||
+          responseText ||
+          `API Error ${response.status}`;
+
+        // If client returned validation or auth error (400, 401, 403), throw immediately
+        if (response.status === 400 || response.status === 401 || response.status === 403) {
+          throw new Error(message);
+        }
+
+        if (i < candidates.length - 1) {
+          console.warn(`[API] Server returned ${response.status}. Trying fallback candidate...`);
+          continue;
+        }
+
+        throw new Error(message);
+      }
+
+      return data;
+    } catch (error) {
+      const durationMs = Date.now() - startedAt;
+      console.log(`[API Attempt ${i + 1} Failed] ${error?.message} (${durationMs}ms)`);
+      lastError = error;
+
+      const errorStr = (error?.message || '').toLowerCase();
+      const isNetworkIssue =
+        errorStr.includes('timed out') ||
+        errorStr.includes('network request failed') ||
+        errorStr.includes('failed to fetch') ||
+        errorStr.includes('connection refused') ||
+        errorStr.includes('econnrefused');
+
+      if (!isNetworkIssue) {
+        throw error;
+      }
+
+      if (i < candidates.length - 1) {
+        console.warn(`[API] Retrying with candidate ${i + 2}...`);
+      }
     }
-
-    const response = await fetchWithTimeout(
-      url,
-      {
-        ...options,
-        method,
-        headers: requestHeaders,
-      },
-      NETWORK_TIMEOUT_MS
-    );
-
-    const durationMs = Date.now() - startedAt;
-
-    console.log('================ API RESPONSE RECEIVED ================');
-    console.log('API URL:', url);
-    console.log('API STATUS:', response.status);
-    console.log('API OK:', response.ok);
-    console.log('API DURATION MS:', durationMs);
-
-    const responseText = await response.text();
-
-    console.log('API RESPONSE LENGTH:', responseText?.length || 0);
-    console.log('API RESPONSE START:', responseText?.substring(0, 1000));
-
-    const data = parseJsonSafely(responseText, fallbackValue);
-
-    if (!response.ok) {
-      const message =
-        data?.message ||
-        data?.title ||
-        data?.error ||
-        responseText ||
-        `API Error ${response.status}`;
-
-      throw new Error(message);
-    }
-
-    return data;
-  } catch (error) {
-    const durationMs = Date.now() - startedAt;
-
-    console.log('================ API REQUEST FAILED ================');
-    console.log('FAILED API MODE:', API_MODE);
-    console.log('FAILED API URL:', url);
-    console.log('FAILED API METHOD:', method);
-    console.log('FAILED API DURATION MS:', durationMs);
-    console.log('FAILED ERROR MESSAGE:', error?.message);
-
-    throw error;
   }
+
+  throw lastError || new Error('Network request failed. Please check your internet connection.');
 };
 
 // ======================================================
@@ -906,7 +907,6 @@ export const runPinumApiDiagnostics = async () => {
   ];
 
   console.log('================ PINUM API DIAGNOSTICS START ================');
-  console.log('DIAGNOSTIC API_MODE:', API_MODE);
   console.log('DIAGNOSTIC BASE_URL:', BASE_URL);
   console.log('DIAGNOSTIC FILE_BASE_URL:', FILE_BASE_URL);
 

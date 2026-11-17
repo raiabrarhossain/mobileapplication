@@ -607,7 +607,7 @@ export default function ChatbotScreen({ navigation, route }) {
       <View style={[styles.messageRow, item.isUser ? styles.rowUser : styles.rowBot]}>
         {!item.isUser && (
           <View style={styles.botAvatar}>
-            <ChatbotIcon size={26} />
+            <ChatbotIcon size={30} />
           </View>
         )}
         <View style={[styles.bubble, item.isUser ? styles.bubbleUserStyle : styles.bubbleBotStyle]}>
@@ -632,7 +632,7 @@ export default function ChatbotScreen({ navigation, route }) {
         </TouchableOpacity>
         <View style={styles.botHeaderInfo}>
           <View style={styles.avatarContainer}>
-            <ChatbotIcon size={34} style={{ marginTop: 2 }} />
+            <ChatbotIcon size={40} />
             <View style={styles.onlineBadge} />
           </View>
           <View>
@@ -845,12 +845,19 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start'
   },
   botAvatar: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
-    alignSelf: 'flex-end'
+    alignSelf: 'flex-end',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   bubble: {
     borderRadius: 15,

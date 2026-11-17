@@ -6,8 +6,8 @@ const https = require('https');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const PORT = process.env.PORT || 3000;
-const TARGET_HOST = process.env.TARGET_HOST || '127.0.0.1';
-const TARGET_PORT = process.env.TARGET_PORT || 7059;
+const TARGET_HOST = process.env.TARGET_HOST || 'www.pinum.org.pk';
+const TARGET_PORT = process.env.TARGET_PORT || 443;
 
 const server = http.createServer((req, res) => {
   console.log(`[Proxy] ${req.method} ${req.url}`);
@@ -23,7 +23,6 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Rewrite /api/ prefix if needed, or forward directly
   const options = {
     hostname: TARGET_HOST,
     port: TARGET_PORT,
@@ -31,7 +30,7 @@ const server = http.createServer((req, res) => {
     method: req.method,
     headers: {
       ...req.headers,
-      host: `${TARGET_HOST}:${TARGET_PORT}`,
+      host: TARGET_PORT === 443 ? TARGET_HOST : `${TARGET_HOST}:${TARGET_PORT}`,
     },
     rejectUnauthorized: false,
   };
