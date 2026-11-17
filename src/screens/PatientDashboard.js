@@ -17,7 +17,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import LoadingScreen from '../components/LoadingScreen';
+import BottomNavBar from '../components/BottomNavBar';
+import InAppPushBanner from '../components/InAppPushBanner';
 import { fetchPatientReports, getReportDownloadUrl } from '../services/api';
+import { checkNewReports } from '../services/notificationService';
 
 const GRADIENT_COLORS = ['#2D9CDB', '#8E44AD'];
 
@@ -40,6 +43,10 @@ export default function PatientDashboard({ navigation, route }) {
   const [loadingReports, setLoadingReports] = useState(false);
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadedFiles, setDownloadedFiles] = useState({});
+  const [activeBannerNotification, setActiveBannerNotification] = useState(null);
+  const [isBannerVisible, setIsBannerVisible] = useState(false);
+
+  const lang = route.params?.language || 'en';
 
   useEffect(() => {
     if (!route.params?.user) {
@@ -76,6 +83,16 @@ export default function PatientDashboard({ navigation, route }) {
       setReports(cleanData);
 
       await checkDownloadedFiles(cleanData);
+
+      try {
+        const newNotifs = await checkNewReports({ username: prn }, cleanData);
+        if (newNotifs && newNotifs.length > 0) {
+          setActiveBannerNotification(newNotifs[0]);
+          setIsBannerVisible(true);
+        }
+      } catch (notifErr) {
+        console.log('Push notif check error:', notifErr);
+      }
     } catch (error) {
       console.error('Dashboard Load Error:', error);
       Alert.alert('Error', error.message || 'Failed to load reports.');
@@ -442,7 +459,7 @@ export default function PatientDashboard({ navigation, route }) {
             keyExtractor={(item, index) => `${getUniqueFileId(item)}_${index}`}
             renderItem={renderReportItem}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 50, paddingTop: 5 }}
+            contentContainerStyle={{ paddingBottom: 85, paddingTop: 5 }}
             initialNumToRender={8}
             maxToRenderPerBatch={10}
             windowSize={10}
@@ -450,6 +467,22 @@ export default function PatientDashboard({ navigation, route }) {
           />
         )}
       </View>
+
+      {/* Real-time In-App Push Notification Drop-Down Banner */}
+      <InAppPushBanner
+        visible={isBannerVisible}
+        notification={activeBannerNotification}
+        language={lang}
+        onDismiss={() => setIsBannerVisible(false)}
+      />
+
+      {/* Uniform Beautiful Bottom Footer Navigation */}
+      <BottomNavBar
+        activeTab="reports"
+        navigation={navigation}
+        user={user}
+        language={lang}
+      />
     </SafeAreaView>
   );
 }

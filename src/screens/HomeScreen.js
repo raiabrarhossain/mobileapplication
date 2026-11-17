@@ -23,6 +23,10 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChatbotIcon from '../components/ChatbotIcon';
+import BottomNavBar from '../components/BottomNavBar';
+import InAppPushBanner from '../components/InAppPushBanner';
+import { getNotifications, getUnreadCount, markAllAsRead, addNotification } from '../services/notificationService';
+import * as Haptics from 'expo-haptics';
 import { HOME_SAMPLING_POSTER_BASE64 } from '../assets/home_sampling_poster_base64';
 import { PUNJAB_HEALTH_CARD_BASE64 } from '../assets/punjab_health_card_base64';
 import { fetchAppSlider, fetchNews, fetchHospitalTimings } from '../services/api';
@@ -87,7 +91,12 @@ const TRANSLATIONS = {
     sehatCardSub: 'Free Cancer Treatment Under Punjab Card',
     sehatCardBadge: 'SEHAT SAHULAT • 100% FREE',
     sehatCardLimit: 'Rs. 1,000,000 Limit',
-    sehatCardBtn: 'Complete Guide & Steps'
+    sehatCardBtn: 'Complete Guide & Steps',
+    labReports: 'Lab Tests',
+    notificationsTitle: 'Notifications & Alerts',
+    markAllRead: 'Mark All as Read',
+    testPushAlert: 'Test New Report Alert',
+    noNotifications: 'No notifications yet',
   },
   ur: {
     welcome: 'خوش آمدید',
@@ -131,7 +140,12 @@ const TRANSLATIONS = {
     sehatCardSub: 'پنجاب صحت کارڈ پر کینسر کا مکمل مفت علاج',
     sehatCardBadge: 'صحت سہولت پروگرام • 100% مفت',
     sehatCardLimit: 'سالانہ 10 لاکھ روپے حد',
-    sehatCardBtn: 'رہنمائی اور مراحل دیکھیں'
+    sehatCardBtn: 'رہنمائی اور مراحل دیکھیں',
+    labReports: 'لیب ریٹس',
+    notificationsTitle: 'اطلاعات اور پیغامات',
+    markAllRead: 'سب پڑھ لیں',
+    testPushAlert: 'نئی رپورٹ الرٹ ٹیسٹ کریں',
+    noNotifications: 'کوئی نیا پیغام نہیں ہے',
   }
 };
 
@@ -172,6 +186,12 @@ export default function HomeScreen({ navigation, route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+
+  const [isNotificationsModalVisible, setIsNotificationsModalVisible] = useState(false);
+  const [notificationsList, setNotificationsList] = useState([]);
+  const [unreadNotifsCount, setUnreadNotifsCount] = useState(0);
+  const [bannerNotification, setBannerNotification] = useState(null);
+  const [isBannerVisible, setIsBannerVisible] = useState(false);
 
   // Animated Custom Toast States & Helpers
   const toastOpacity = useRef(new Animated.Value(0)).current;
@@ -386,6 +406,25 @@ export default function HomeScreen({ navigation, route }) {
       if (timings) {
         setHospitalTimings(timings);
       }
+
+      // Check & Load Notifications
+      try {
+        const notifs = await getNotifications();
+        setNotificationsList(notifs);
+        const unread = notifs.filter(n => !n.isRead).length;
+        setUnreadNotifsCount(unread);
+
+        if (notifications && unread > 0) {
+          const firstUnread = notifs.find(n => !n.isRead);
+          if (firstUnread) {
+            setBannerNotification(firstUnread);
+            setIsBannerVisible(true);
+          }
+        }
+      } catch (err) {
+        console.log('Error loading notifications in HomeScreen:', err);
+      }
+
       if (showRefreshedAlert) {
         showToast(
           appLanguage === 'ur' ? 'کامیابی' : 'Success',
@@ -400,10 +439,40 @@ export default function HomeScreen({ navigation, route }) {
     }
   };
 
-  const handleOpenNotifications = () => {
-    setHasUnreadNotifications(false);
-    setLastCheckedNewsCount(newsItems.length);
-    navigation.navigate('News', { language: appLanguage });
+  const handleOpenNotifications = async () => {
+    try {
+      const notifs = await getNotifications();
+      setNotificationsList(notifs);
+      setUnreadNotifsCount(notifs.filter(n => !n.isRead).length);
+    } catch (_e) {}
+    setIsNotificationsModalVisible(true);
+  };
+
+  const handleMarkAllNotificationsRead = async () => {
+    try {
+      const updated = await markAllAsRead();
+      setNotificationsList(updated);
+      setUnreadNotifsCount(0);
+      setHasUnreadNotifications(false);
+    } catch (_e) {}
+  };
+
+  const handleTriggerTestNotification = async () => {
+    try {
+      const newNotif = await addNotification({
+        title: 'New Diagnostic Report Ready',
+        titleUrdu: 'نئی تشخیصی رپورٹ تیار ہے',
+        message: 'Complete Blood Count (CBC) & Chemotherapy report is finalized and ready for review.',
+        messageUrdu: 'آپ کی سی بی سی اور کیموتھراپی رپورٹ تیار ہے، ابھی دیکھیں۔',
+        type: 'report',
+      });
+      const notifs = await getNotifications();
+      setNotificationsList(notifs);
+      setUnreadNotifsCount(notifs.filter(n => !n.isRead).length);
+      setIsNotificationsModalVisible(false);
+      setBannerNotification(newNotif);
+      setIsBannerVisible(true);
+    } catch (_e) {}
   };
 
   useEffect(() => {
@@ -624,10 +693,10 @@ export default function HomeScreen({ navigation, route }) {
               activeOpacity={0.7}
             >
               <Ionicons name="notifications-outline" size={20} color={COLORS.white} />
-              {hasUnreadNotifications && newsItems.length > 0 && (
+              {(unreadNotifsCount > 0 || (hasUnreadNotifications && newsItems.length > 0)) && (
                 <View style={styles.bellBadge}>
                   <Text style={styles.bellBadgeText}>
-                    {newsItems.length}
+                    {unreadNotifsCount > 0 ? unreadNotifsCount : newsItems.length}
                   </Text>
                 </View>
               )}
@@ -1496,11 +1565,181 @@ export default function HomeScreen({ navigation, route }) {
         </View>
       </Modal>
 
-      <View style={[styles.bottomNav, { paddingBottom: insets.bottom > 0 ? insets.bottom : 10 }]}>
-        <NavIcon icon="home" label={t.home} active />
-        <NavIcon icon="document-text-outline" label={t.reports} onPress={handleReportsClick} />
-        <NavIcon icon="settings-outline" label={t.settingsTab} onPress={() => setIsSettingsVisible(true)} />
-      </View>
+      {/* NOTIFICATIONS & ALERTS MODAL */}
+      <Modal
+        visible={isNotificationsModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsNotificationsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: '85%' }]}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={styles.notifHeaderIcon}>
+                  <Ionicons name="notifications" size={20} color="#0B2265" />
+                </View>
+                <View style={{ marginLeft: 10 }}>
+                  <Text style={styles.modalTitle}>{t.notificationsTitle}</Text>
+                  <Text style={styles.modalSubtitle}>
+                    {unreadNotifsCount} {appLanguage === 'ur' ? 'نئے پیغامات' : 'new notifications'}
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => setIsNotificationsModalVisible(false)}
+                style={styles.closeBtn}
+              >
+                <Ionicons name="close" size={22} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Quick Actions Bar */}
+            <View style={styles.notifActionsBar}>
+              <TouchableOpacity
+                style={styles.markReadBtn}
+                onPress={handleMarkAllNotificationsRead}
+              >
+                <Ionicons name="checkmark-done" size={15} color="#0B2265" />
+                <Text style={styles.markReadText}>{t.markAllRead}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.testAlertBtn}
+                onPress={handleTriggerTestNotification}
+              >
+                <Ionicons name="flash" size={14} color="#E67E22" />
+                <Text style={styles.testAlertText}>{t.testPushAlert}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: 8 }}>
+              {notificationsList.length > 0 ? (
+                notificationsList.map((item) => {
+                  const isReport = item.type === 'report';
+                  const isService = item.type === 'service';
+                  const isCard = item.type === 'card';
+
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        setIsNotificationsModalVisible(false);
+                        if (isReport) {
+                          if (user) {
+                            navigation.navigate('PatientDashboard', { user, language: appLanguage });
+                          } else {
+                            navigation.navigate('Login', { language: appLanguage });
+                          }
+                        } else if (isService) {
+                          setIsHomeSamplingVisible(true);
+                        } else if (isCard) {
+                          navigation.navigate('PunjabCard', { language: appLanguage });
+                        } else {
+                          navigation.navigate('News', { language: appLanguage });
+                        }
+                      }}
+                      style={[
+                        styles.notifItemCard,
+                        !item.isRead && styles.notifItemUnread,
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.notifItemIconCircle,
+                          isReport && { backgroundColor: '#EBF4FE' },
+                          isService && { backgroundColor: '#F0F9F4' },
+                          isCard && { backgroundColor: '#F0FDF4' },
+                        ]}
+                      >
+                        <Ionicons
+                          name={
+                            isReport
+                              ? 'document-text'
+                              : isService
+                              ? 'home'
+                              : isCard
+                              ? 'heart'
+                              : 'notifications'
+                          }
+                          size={20}
+                          color={
+                            isReport
+                              ? '#0B2265'
+                              : isService
+                              ? '#27AE60'
+                              : isCard
+                              ? '#0E623B'
+                              : '#4A5568'
+                          }
+                        />
+                      </View>
+
+                      <View style={{ flex: 1, marginLeft: 12 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.notifItemTitle} numberOfLines={1}>
+                            {appLanguage === 'ur' && item.titleUrdu ? item.titleUrdu : item.title}
+                          </Text>
+                          {!item.isRead && <View style={styles.unreadDot} />}
+                        </View>
+                        <Text style={styles.notifItemMessage} numberOfLines={2}>
+                          {appLanguage === 'ur' && item.messageUrdu ? item.messageUrdu : item.message}
+                        </Text>
+                        <Text style={styles.notifItemTime}>
+                          {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              ) : (
+                <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                  <Ionicons name="notifications-off-outline" size={44} color="#CBD5E0" />
+                  <Text style={{ color: '#A0AEC0', marginTop: 10, fontSize: 13 }}>
+                    {t.noNotifications}
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Real-time In-App Push Notification Drop-Down Banner */}
+      <InAppPushBanner
+        visible={isBannerVisible}
+        notification={bannerNotification}
+        language={appLanguage}
+        onPress={(notif) => {
+          setIsBannerVisible(false);
+          if (notif?.type === 'report') {
+            if (user) {
+              navigation.navigate('PatientDashboard', { user, language: appLanguage });
+            } else {
+              navigation.navigate('Login', { language: appLanguage });
+            }
+          } else if (notif?.type === 'service') {
+            setIsHomeSamplingVisible(true);
+          } else if (notif?.type === 'card') {
+            navigation.navigate('PunjabCard', { language: appLanguage });
+          } else {
+            navigation.navigate('News', { language: appLanguage });
+          }
+        }}
+        onDismiss={() => setIsBannerVisible(false)}
+      />
+
+      {/* Professional Beautiful Bottom Footer Navigation */}
+      <BottomNavBar
+        activeTab="home"
+        navigation={navigation}
+        user={user}
+        language={appLanguage}
+        unreadReportsCount={unreadNotifsCount}
+        onOpenSettings={() => setIsSettingsVisible(true)}
+      />
     </SafeAreaView>
   );
 }
@@ -2832,5 +3071,97 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  notifHeaderIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#EBF4FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notifActionsBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDF2F7',
+    marginBottom: 6,
+  },
+  markReadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EBF4FE',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  markReadText: {
+    color: '#0B2265',
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  testAlertBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF7ED',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+  },
+  testAlertText: {
+    color: '#C2410C',
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  notifItemCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#EDF2F7',
+  },
+  notifItemUnread: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#D4E5FB',
+  },
+  notifItemIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notifItemTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    flex: 1,
+  },
+  notifItemMessage: {
+    fontSize: 11,
+    color: COLORS.textLight,
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  notifItemTime: {
+    fontSize: 9.5,
+    color: '#A0AEC0',
+    marginTop: 4,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E74C3C',
+    marginLeft: 6,
   }
 });
