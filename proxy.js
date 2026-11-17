@@ -5,9 +5,9 @@ const https = require('https');
 // Bypass SSL certificate name mismatch verification
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-const PORT = 3000;
-const TARGET_HOST = 'www.pinum.org.pk';
-const TARGET_PORT = 443;
+const PORT = process.env.PORT || 3000;
+const TARGET_HOST = process.env.TARGET_HOST || '127.0.0.1';
+const TARGET_PORT = process.env.TARGET_PORT || 7059;
 
 const server = http.createServer((req, res) => {
   console.log(`[Proxy] ${req.method} ${req.url}`);

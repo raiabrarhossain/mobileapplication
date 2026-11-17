@@ -10,6 +10,7 @@ import { Image } from 'expo-image';
 export default function SplashScreen({ navigation }) {
   const [fontsLoaded] = useFonts({
     'JameelNoori': require('../assets/fonts/JameelNooriNastaleeq.ttf'),
+    'Amiri': require('../assets/fonts/Amiri-Regular.ttf'),
   });
 
   const logoScale = useRef(new Animated.Value(1)).current;
@@ -68,7 +69,7 @@ export default function SplashScreen({ navigation }) {
 
     // Navigate to Home screen after the sequence finishes
     const timer = setTimeout(() => {
-      navigation.replace('Home');
+      if (navigation) navigation.replace('Home');
     }, 4200);
 
     return () => clearTimeout(timer);
@@ -89,9 +90,9 @@ export default function SplashScreen({ navigation }) {
         from={{ opacity: 0, translateY: -20 }}
         animate={{ opacity: 1, translateY: 0 }}
         transition={{ type: 'timing', duration: 1000, delay: 200 }}
-        style={[styles.bismillah, fontsLoaded && { fontFamily: 'JameelNoori' }]}
+        style={[styles.bismillah, fontsLoaded && { fontFamily: 'Amiri' }]}
       >
-        بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+        بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
       </MotiText>
 
       {/* 2. Animated Logo Container */}

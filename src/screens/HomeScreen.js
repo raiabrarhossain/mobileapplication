@@ -138,6 +138,8 @@ export default function HomeScreen({ navigation, route }) {
   const [appLanguage, setAppLanguage] = useState('en');
 
   const [newsItems, setNewsItems] = useState([]);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(true);
+  const [lastCheckedNewsCount, setLastCheckedNewsCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -209,17 +211,14 @@ export default function HomeScreen({ navigation, route }) {
     const now = new Date();
     const day = now.getDay(); // 0: Sun, 1: Mon, ..., 5: Fri, 6: Sat
 
-    let timingText = '';
-    let isSunday = (day === 0);
-    let isFriday = (day === 5);
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentSecond = now.getSeconds();
+    const nowSeconds = currentHour * 3600 + currentMinute * 60 + currentSecond;
 
-    if (isSunday) {
-      timingText = 'Closed';
-    } else if (isFriday) {
-      timingText = timings?.fridayBreak || '08:00 AM To 12:30 PM';
-    } else {
-      timingText = timings?.normalTiming || '08:00 AM To 08:30 PM';
-    }
+    let isOpen = false;
+    let secondsRemaining = 0;
+    let displayRange = '';
 
     const parseTimeString = (timeStr) => {
       if (!timeStr) return null;
@@ -233,58 +232,65 @@ export default function HomeScreen({ navigation, route }) {
       return hour * 3600 + minute * 60;
     };
 
-    const parseRange = (rangeStr) => {
-      if (!rangeStr || rangeStr.toLowerCase().includes('closed')) return null;
-      const parts = rangeStr.split(/To/i);
-      if (parts.length !== 2) return null;
-      const start = parseTimeString(parts[0]);
-      const end = parseTimeString(parts[1]);
-      if (start === null || end === null) return null;
-      return { start, end };
-    };
+    // Helper to get normal timing limits
+    const normalOpenSeconds = parseTimeString(timings?.normalTiming?.split(/To/i)[0]) || (8 * 3600); // 8:00 AM
+    const normalCloseSeconds = parseTimeString(timings?.normalTiming?.split(/To/i)[1]) || (20.5 * 3600); // 8:30 PM
 
-    const range = parseRange(timingText);
-
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentSecond = now.getSeconds();
-    const nowSeconds = currentHour * 3600 + currentMinute * 60 + currentSecond;
-
-    let isOpen = false;
-    let secondsRemaining = 0;
-
-    if (isSunday || !range) {
+    if (day === 0) {
+      // Sunday: Closed
       isOpen = false;
-      const nextOpenTime = parseTimeString(timings?.normalTiming?.split(/To/i)[0]) || (8 * 3600);
-      secondsRemaining = (24 * 3600 - nowSeconds) + nextOpenTime;
-      if (isSunday) {
-        secondsRemaining += 24 * 3600;
-      }
-    } else {
-      const { start, end } = range;
-      if (nowSeconds >= start && nowSeconds < end) {
+      secondsRemaining = (24 * 3600 - nowSeconds) + normalOpenSeconds;
+      displayRange = appLanguage === 'ur' ? 'اتوار: بند' : 'Sunday: Closed';
+    } else if (day === 5) {
+      // Friday Jummah Break: 12:30 PM - 02:30 PM
+      const friMorningStart = normalOpenSeconds; // 8:00 AM
+      const friMorningEnd = parseTimeString('12:30 PM'); // 12:30 PM
+      const friEveningStart = parseTimeString('02:30 PM'); // 2:30 PM
+      const friEveningEnd = normalCloseSeconds; // 8:30 PM
+
+      displayRange = '08:00 AM - 12:30 PM & 02:30 PM - 08:30 PM';
+
+      if (nowSeconds >= friMorningStart && nowSeconds < friMorningEnd) {
         isOpen = true;
-        secondsRemaining = end - nowSeconds;
+        secondsRemaining = friMorningEnd - nowSeconds;
+      } else if (nowSeconds >= friMorningEnd && nowSeconds < friEveningStart) {
+        isOpen = false;
+        secondsRemaining = friEveningStart - nowSeconds;
+        displayRange = appLanguage === 'ur' ? 'وقفہ: 12:30 PM - 02:30 PM' : 'Break: 12:30 PM - 02:30 PM';
+      } else if (nowSeconds >= friEveningStart && nowSeconds < friEveningEnd) {
+        isOpen = true;
+        secondsRemaining = friEveningEnd - nowSeconds;
       } else {
         isOpen = false;
-        if (nowSeconds >= end) {
+        if (nowSeconds >= friEveningEnd) {
+          // Closed for Friday night, next is Saturday morning open
+          secondsRemaining = (24 * 3600 - nowSeconds) + normalOpenSeconds;
+        } else {
+          // Morning before 8 AM
+          secondsRemaining = friMorningStart - nowSeconds;
+        }
+      }
+    } else {
+      // Mon - Thu, Sat
+      displayRange = timings?.normalTiming ? timings.normalTiming.replace(/\s*To\s*/i, ' - ') : '08:00 AM - 08:30 PM';
+      
+      if (nowSeconds >= normalOpenSeconds && nowSeconds < normalCloseSeconds) {
+        isOpen = true;
+        secondsRemaining = normalCloseSeconds - nowSeconds;
+      } else {
+        isOpen = false;
+        if (nowSeconds >= normalCloseSeconds) {
           const isTomorrowSunday = (day === 6);
-          const isTomorrowFriday = (day === 4);
-          let tomorrowOpenText = '';
           if (isTomorrowSunday) {
-            const mondayOpenTime = parseTimeString(timings?.normalTiming?.split(/To/i)[0]) || (8 * 3600);
-            secondsRemaining = (24 * 3600 - nowSeconds) + (24 * 3600) + mondayOpenTime;
+            // Tomorrow is Sunday (Closed), next open is Monday morning
+            secondsRemaining = (24 * 3600 - nowSeconds) + (24 * 3600) + normalOpenSeconds;
           } else {
-            if (isTomorrowFriday) {
-              tomorrowOpenText = timings?.fridayBreak || '08:00 AM To 12:30 PM';
-            } else {
-              tomorrowOpenText = timings?.normalTiming || '08:00 AM To 08:30 PM';
-            }
-            const tomorrowOpenTime = parseTimeString(tomorrowOpenText.split(/To/i)[0]) || (8 * 3600);
-            secondsRemaining = (24 * 3600 - nowSeconds) + tomorrowOpenTime;
+            // Next open is tomorrow morning
+            secondsRemaining = (24 * 3600 - nowSeconds) + normalOpenSeconds;
           }
         } else {
-          secondsRemaining = start - nowSeconds;
+          // Morning before open
+          secondsRemaining = normalOpenSeconds - nowSeconds;
         }
       }
     }
@@ -296,22 +302,25 @@ export default function HomeScreen({ navigation, route }) {
     const pad = (num) => String(num).padStart(2, '0');
     const timeString = `${pad(h)}:${pad(m)}:${pad(s)}`;
 
-    let displayRange = '8 AM - 8 PM';
-    if (isSunday) {
-      displayRange = appLanguage === 'ur' ? 'اتوار: بند' : 'Sunday: Closed';
-    } else if (timingText) {
-      displayRange = timingText.replace(/\s*To\s*/i, ' - ');
+    let statusLabel = isOpen 
+      ? (appLanguage === 'ur' ? 'کھلا ہے' : 'OPEN') 
+      : (appLanguage === 'ur' ? 'بند ہے' : 'CLOSED');
+
+    let statusSubLabel = '';
+    if (day === 5 && nowSeconds >= parseTimeString('12:30 PM') && nowSeconds < parseTimeString('02:30 PM')) {
+      statusLabel = appLanguage === 'ur' ? 'وقفہ جمعہ' : 'JUMMAH BREAK';
+      statusSubLabel = appLanguage === 'ur' ? `کھلنے میں: ${timeString}` : `Opens in: ${timeString}`;
+    } else {
+      statusSubLabel = isOpen 
+        ? (appLanguage === 'ur' ? `بند ہونے میں: ${timeString}` : `Closes in: ${timeString}`)
+        : (appLanguage === 'ur' ? `کھلنے میں: ${timeString}` : `Opens in: ${timeString}`);
     }
 
     return {
       isOpen,
       displayRange,
-      label: isOpen 
-        ? (appLanguage === 'ur' ? 'کھلا ہے' : 'OPEN') 
-        : (appLanguage === 'ur' ? 'بند ہے' : 'CLOSED'),
-      subLabel: isOpen 
-        ? (appLanguage === 'ur' ? `بند ہونے میں: ${timeString}` : `Closes in: ${timeString}`)
-        : (appLanguage === 'ur' ? `کھلنے میں: ${timeString}` : `Opens in: ${timeString}`)
+      label: statusLabel,
+      subLabel: statusSubLabel
     };
   };
 
@@ -341,6 +350,9 @@ export default function HomeScreen({ navigation, route }) {
       }
       if (news && news.length > 0) {
         setNewsItems(news);
+        if (news.length > lastCheckedNewsCount) {
+          setHasUnreadNotifications(true);
+        }
       }
       if (timings) {
         setHospitalTimings(timings);
@@ -357,6 +369,12 @@ export default function HomeScreen({ navigation, route }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOpenNotifications = () => {
+    setHasUnreadNotifications(false);
+    setLastCheckedNewsCount(newsItems.length);
+    navigation.navigate('News', { language: appLanguage });
   };
 
   useEffect(() => {
@@ -573,11 +591,11 @@ export default function HomeScreen({ navigation, route }) {
             {/* Notification Bell with Badge */}
             <TouchableOpacity 
               style={styles.headerIconButton}
-              onPress={() => navigation.navigate('News', { language: appLanguage })}
+              onPress={handleOpenNotifications}
               activeOpacity={0.7}
             >
               <Ionicons name="notifications-outline" size={20} color={COLORS.white} />
-              {newsItems.length > 0 && (
+              {hasUnreadNotifications && newsItems.length > 0 && (
                 <View style={styles.bellBadge}>
                   <Text style={styles.bellBadgeText}>
                     {newsItems.length}
@@ -998,7 +1016,7 @@ export default function HomeScreen({ navigation, route }) {
                 </View>
                 <View style={styles.contactTextCol}>
                   <Text style={styles.contactItemLabel}>Phone / Reception</Text>
-                  <Text style={styles.contactItemValue}>+92 (41) 9210171-72</Text>
+                  <Text style={styles.contactItemValue}>(+92)-41-9210171-77</Text>
                 </View>
                 <View style={styles.callNowBadge}>
                   <Text style={styles.callNowBadgeText}>Call Now</Text>
@@ -1006,28 +1024,16 @@ export default function HomeScreen({ navigation, route }) {
               </TouchableOpacity>
 
               {/* WhatsApp */}
-              <TouchableOpacity 
-                style={styles.contactItemRow}
-                onPress={() => Linking.openURL('https://wa.me/92419210171')}
-              >
+              <View style={styles.contactItemRow}>
                 <View style={styles.contactIconContainer}>
                   <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
                 </View>
                 <View style={styles.contactTextCol}>
                   <Text style={styles.contactItemLabel}>WhatsApp Support</Text>
-                  <Text style={styles.contactItemValue}>Chat on WhatsApp</Text>
+                  <Text style={styles.contactItemValue}>Coming Soon</Text>
                 </View>
-                <Ionicons name="open-outline" size={18} color={COLORS.textLight} />
-              </TouchableOpacity>
-
-              {/* Fax */}
-              <View style={styles.contactItemRow}>
-                <View style={styles.contactIconContainer}>
-                  <MaterialCommunityIcons name="fax" size={22} color={COLORS.accent} />
-                </View>
-                <View style={styles.contactTextCol}>
-                  <Text style={styles.contactItemLabel}>Fax Number</Text>
-                  <Text style={styles.contactItemValue}>+92 (41) 9210175</Text>
+                <View style={[styles.callNowBadge, { backgroundColor: '#FFF3E0' }]}>
+                  <Text style={[styles.callNowBadgeText, { color: '#E65100' }]}>Coming Soon</Text>
                 </View>
               </View>
 

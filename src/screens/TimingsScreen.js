@@ -36,7 +36,7 @@ const FALLBACK_TIMINGS = {
   normalTiming: "08:00 AM To 08:30 PM",
   fridayEnglish: "Friday",
   fridayUrdu: "جمعہ",
-  fridayBreak: "08:00 AM To 12:30 PM",
+  fridayBreak: "08:00 AM To 12:30 PM & 02:30 PM To 08:30 PM",
   holidayNote: "Sunday: Closed\nHospital is open from 08:00 AM to 08:30 PM.",
   importantInstructions: "کینسر کے مریض اپنا شناختی کارڈ، ریفرل لیٹر اور تمام پرانی رپورٹس ساتھ لائیں۔",
   discountNotice: "",
@@ -119,14 +119,20 @@ export default function TimingsScreen({ navigation, route }) {
       return { text: t.closedToday, color: COLORS.danger, icon: 'lock-outline' };
     }
     if (day === 5) {
-      // Friday: 8:00 to 12:30
-      if (currentTime >= 8.0 && currentTime <= 12.5) {
+      // Friday Jummah Break: 12:30 to 2:30 (12.5 to 14.5)
+      if (currentTime >= 8.0 && currentTime < 12.5) {
+        return { text: t.openNow, color: COLORS.success, icon: 'clock-check-outline' };
+      }
+      if (currentTime >= 12.5 && currentTime < 14.5) {
+        return { text: lang === 'ur' ? 'وقفہ جمعہ' : 'Jummah Break', color: COLORS.warning, icon: 'clock-outline' };
+      }
+      if (currentTime >= 14.5 && currentTime < 20.5) {
         return { text: t.openNow, color: COLORS.success, icon: 'clock-check-outline' };
       }
       return { text: t.closedNow, color: COLORS.danger, icon: 'lock-outline' };
     }
     // Mon - Thu & Sat: 08:00 AM to 08:30 PM (20.5 hours)
-    if (currentTime >= 8.0 && currentTime <= 20.5) {
+    if (currentTime >= 8.0 && currentTime < 20.5) {
       return { text: t.openNow, color: COLORS.success, icon: 'clock-check-outline' };
     }
     return { text: t.closedNow, color: COLORS.danger, icon: 'lock-outline' };
@@ -242,7 +248,13 @@ export default function TimingsScreen({ navigation, route }) {
                       colors={['#FEF9E7', '#FDEBD0']}
                       style={styles.timeBadgeWarning}
                     >
-                      <Text style={styles.timeTextWarning}>{data?.fridayBreak || '08:00 AM To 12:30 PM'}</Text>
+                      <Text style={styles.timeTextWarning}>
+                        {data?.fridayBreak && data.fridayBreak.includes('02:30')
+                          ? data.fridayBreak
+                          : (lang === 'ur' 
+                              ? '08:00 AM سے 12:30 PM اور 02:30 PM سے 08:30 PM' 
+                              : '08:00 AM To 12:30 PM & 02:30 PM To 08:30 PM')}
+                      </Text>
                     </LinearGradient>
                   </View>
                 </View>

@@ -18,22 +18,13 @@ const getLocalProxyBaseUrl = () => {
 
   // For Android emulator loopback to host
   if (Platform.OS === 'android') {
-    const hostIp = getExpoHostIp();
-    if (hostIp) {
-      return `http://${hostIp}:3000`;
-    }
     return 'http://10.0.2.2:3000';
-  }
-
-  const hostIp = getExpoHostIp();
-  if (hostIp) {
-    return `http://${hostIp}:3000`;
   }
 
   return 'http://localhost:3000';
 };
 
-const API_MODE = __DEV__ ? 'LOCAL_PROXY' : 'LIVE_DIRECT';
+const API_MODE = 'LOCAL_PROXY';
 
 const API_CONFIG = {
   LOCAL_PROXY: {
