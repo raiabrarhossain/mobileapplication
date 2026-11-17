@@ -112,8 +112,10 @@ export default function LoginScreen({ navigation }) {
       setUserCaptcha(''); // Clear wrong captcha input
       
       // ✅ SMART API ERROR DETECTION
-      const apiMsg = error.message.toLowerCase();
-      if (apiMsg.includes('password') || apiMsg.includes('credentials')) {
+      const apiMsg = (error.message || '').toLowerCase();
+      if (apiMsg.includes('incorrect prn or password') || (apiMsg.includes('prn') && apiMsg.includes('password'))) {
+          showError("Incorrect PRN or Password. Please verify and try again.", "password");
+      } else if (apiMsg.includes('password') || apiMsg.includes('credentials')) {
           showError("Incorrect Password. Please try again.", "password");
       } else if (apiMsg.includes('prn') || apiMsg.includes('user') || apiMsg.includes('found') || apiMsg.includes('invalid')) {
           showError("PRN Number not found. Please check and try again.", "prn");

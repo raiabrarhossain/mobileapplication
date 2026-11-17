@@ -24,7 +24,7 @@ const getLocalProxyBaseUrl = () => {
   return 'http://localhost:3000';
 };
 
-const API_MODE = 'LOCAL_PROXY';
+const API_MODE = 'LIVE_DIRECT';
 
 const API_CONFIG = {
   LOCAL_PROXY: {
@@ -279,18 +279,16 @@ export const buildDoctorImageUrl = (imagePath) => {
   if (!path) return null;
 
   if (path.startsWith('http://') || path.startsWith('https://')) {
-    return path;
+    return path.replace(/^http:\/\/(www\.)?pinum\.org\.pk/i, 'https://www.pinum.org.pk');
   }
 
+  path = path.replace(/\\/g, '/');
   path = path.replace('lib/assets/', 'lib/Assets/');
   path = path.replace('Lib/Assets/', 'lib/Assets/');
   path = path.replace('LIB/ASSETS/', 'lib/Assets/');
 
-  if (path.startsWith('/')) {
-    return `${FILE_BASE_URL}${path}`;
-  }
-
-  return `${FILE_BASE_URL}/${path}`;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${FILE_BASE_URL}${encodeURI(cleanPath)}`;
 };
 
 export const buildNewsAttachmentUrl = (downloadLink) => {
@@ -300,7 +298,7 @@ export const buildNewsAttachmentUrl = (downloadLink) => {
   if (!cleanLink) return null;
 
   if (cleanLink.startsWith('http://') || cleanLink.startsWith('https://')) {
-    return cleanLink;
+    return cleanLink.replace(/^http:\/\/(www\.)?pinum\.org\.pk/i, 'https://www.pinum.org.pk');
   }
 
   if (cleanLink.startsWith('/NewsDocuments/')) {
@@ -319,6 +317,9 @@ export const normalizeApiImageUrl = (imageUrl) => {
 
   let url = String(imageUrl).trim();
   if (!url) return null;
+
+  // Upgrade pinum http to https
+  url = url.replace(/^http:\/\/(www\.)?pinum\.org\.pk/i, 'https://www.pinum.org.pk');
 
   if (
     url.includes('127.0.0.1:7059') ||
@@ -569,15 +570,18 @@ export const fetchLabRates = async () => {
 // ======================================================
 
 export const loginUser = async (username, password, captcha) => {
+  const cleanUsername = String(username || '').trim();
+  const cleanPassword = String(password || '').trim();
+
   const data = await apiRequest(
     `${BASE_URL}/Auth/login`,
     {
       method: 'POST',
       headers: jsonHeaders,
       body: JSON.stringify({
-        username,
-        password,
-        captchaStr: captcha,
+        username: cleanUsername,
+        password: cleanPassword,
+        captchaStr: captcha ? String(captcha).trim() : '',
         rememberMe: true,
         remeberMe: true,
       }),
@@ -585,7 +589,12 @@ export const loginUser = async (username, password, captcha) => {
     {}
   );
 
-  return data || {};
+  return {
+    ...data,
+    token: data?.token || data?.jwtToken || data?.accessToken || '',
+    username: data?.username || data?.prn || data?.PRN || data?.registrationNumber || cleanUsername,
+    prn: data?.prn || data?.PRN || data?.username || cleanUsername,
+  };
 };
 
 // ======================================================

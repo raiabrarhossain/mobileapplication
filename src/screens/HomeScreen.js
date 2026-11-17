@@ -743,45 +743,47 @@ export default function HomeScreen({ navigation, route }) {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: 'timing', duration: 500, delay: 100 }}
         >
-          <LinearGradient
-            colors={user ? DASHBOARD_GRADIENT : GRADIENT_COLORS}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.bannerContainer}
+          <TouchableOpacity
+            activeOpacity={0.88}
+            onPress={() =>
+              user
+                ? user.role === 'Admin'
+                  ? navigation.navigate('AdminDashboard', { user: user })
+                  : navigation.navigate('PatientDashboard', { user: user })
+                : navigation.navigate('Login')
+            }
           >
-            <View style={styles.bannerTextContainer}>
-              <Text style={styles.bannerTitle}>
-                {user ? (user.role === 'Admin' ? 'Admin Portal' : 'Your Reports') : t.patientPortal}
-              </Text>
-
-              <Text style={styles.bannerDesc}>
-                {user ? 'Access your dashboard and features securely.' : t.portalDesc}
-              </Text>
-
-              <TouchableOpacity
-                style={styles.bannerBtn}
-                onPress={() =>
-                  user
-                    ? user.role === 'Admin'
-                      ? navigation.navigate('AdminDashboard', { user: user })
-                      : navigation.navigate('PatientDashboard', { user: user })
-                    : navigation.navigate('Login')
-                }
-              >
-                <Text style={[styles.bannerBtnText, user && { color: '#27AE60' }]}>
-                  {user ? t.dashboard : t.loginNow}
+            <LinearGradient
+              colors={user ? DASHBOARD_GRADIENT : GRADIENT_COLORS}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.bannerContainer}
+            >
+              <View style={styles.bannerTextContainer}>
+                <Text style={styles.bannerTitle}>
+                  {user ? (user.role === 'Admin' ? 'Admin Portal' : 'Your Reports') : t.patientPortal}
                 </Text>
-              </TouchableOpacity>
-            </View>
 
-            <View style={{ opacity: 0.9 }}>
-              <MaterialCommunityIcons
-                name={user ? (user.role === 'Admin' ? 'shield-crown-outline' : 'file-document-multiple-outline') : 'shield-account-outline'}
-                size={55}
-                color={COLORS.white}
-              />
-            </View>
-          </LinearGradient>
+                <Text style={styles.bannerDesc}>
+                  {user ? 'Access your dashboard and features securely.' : t.portalDesc}
+                </Text>
+
+                <View style={styles.bannerBtn}>
+                  <Text style={[styles.bannerBtnText, user && { color: '#27AE60' }]}>
+                    {user ? t.dashboard : t.loginNow}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ opacity: 0.9 }}>
+                <MaterialCommunityIcons
+                  name={user ? (user.role === 'Admin' ? 'shield-crown-outline' : 'file-document-multiple-outline') : 'shield-account-outline'}
+                  size={55}
+                  color={COLORS.white}
+                />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
         </MotiView>
 
         <Text style={styles.sectionTitle}>{t.services}</Text>
