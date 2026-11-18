@@ -1,13 +1,11 @@
 import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
-import { useEffect, useRef, useState } from 'react';
-import { useFonts } from 'expo-font';
+import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { Image } from 'expo-image';
 import {
   Alert,
   Dimensions,
-  FlatList,
   Linking,
   Modal,
   ScrollView,
@@ -25,11 +23,14 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import ChatbotIcon from '../components/ChatbotIcon';
 import BottomNavBar from '../components/BottomNavBar';
 import InAppPushBanner from '../components/InAppPushBanner';
+import HospitalTimingBadge from '../components/HospitalTimingBadge';
+import HeroImageSlider from '../components/HeroImageSlider';
 import { getNotifications, getUnreadCount, markAllAsRead, addNotification } from '../services/notificationService';
 import * as Haptics from 'expo-haptics';
-import { HOME_SAMPLING_POSTER_BASE64 } from '../assets/home_sampling_poster_base64';
-import { PUNJAB_HEALTH_CARD_BASE64 } from '../assets/punjab_health_card_base64';
 import { fetchAppSlider, fetchNews, fetchHospitalTimings } from '../services/api';
+
+const HOME_SAMPLING_POSTER_IMG = require('../assets/home_sampling_poster.jpg');
+const PUNJAB_HEALTH_CARD_IMG = require('../assets/punjab_health_card.jpg');
 
 const { width } = Dimensions.get('window');
 const SLIDER_WIDTH = width - 40;
@@ -149,28 +150,8 @@ const TRANSLATIONS = {
   }
 };
 
-const PICTURE_SLIDER = [
-  {
-    id: '1',
-    image: require('../img/pinumpic.png'),
-    title: 'Excellence in Nuclear Medicine',
-    desc: 'State-of-the-art facilities for comprehensive cancer care.'
-  },
-  {
-    id: '2',
-    image: require('../img/ctSpect.gif'),
-    title: 'Advanced PET/CT Scan',
-    desc: 'Highly accurate diagnostic imaging available 24/7.'
-  }
-];
-
 export default function HomeScreen({ navigation, route }) {
-  const [fontsLoaded] = useFonts({
-    'JameelNoori': require('../assets/fonts/JameelNooriNastaleeq.ttf'),
-  });
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [sliderData, setSliderData] = useState(PICTURE_SLIDER);
+  const [sliderData, setSliderData] = useState(null);
 
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [isContactVisible, setIsContactVisible] = useState(false);
@@ -256,135 +237,7 @@ export default function HomeScreen({ navigation, route }) {
     };
   }, []);
 
-  const getHospitalStatus = (timings) => {
-    const now = new Date();
-    const day = now.getDay(); // 0: Sun, 1: Mon, ..., 5: Fri, 6: Sat
-
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentSecond = now.getSeconds();
-    const nowSeconds = currentHour * 3600 + currentMinute * 60 + currentSecond;
-
-    let isOpen = false;
-    let secondsRemaining = 0;
-    let displayRange = '';
-
-    const parseTimeString = (timeStr) => {
-      if (!timeStr) return null;
-      const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
-      if (!match) return null;
-      let hour = parseInt(match[1], 10);
-      const minute = parseInt(match[2], 10);
-      const isPM = match[3].toUpperCase() === 'PM';
-      if (isPM && hour < 12) hour += 12;
-      if (!isPM && hour === 12) hour = 0;
-      return hour * 3600 + minute * 60;
-    };
-
-    // Helper to get normal timing limits
-    const normalOpenSeconds = parseTimeString(timings?.normalTiming?.split(/To/i)[0]) || (8 * 3600); // 8:00 AM
-    const normalCloseSeconds = parseTimeString(timings?.normalTiming?.split(/To/i)[1]) || (20.5 * 3600); // 8:30 PM
-
-    if (day === 0) {
-      // Sunday: Closed
-      isOpen = false;
-      secondsRemaining = (24 * 3600 - nowSeconds) + normalOpenSeconds;
-      displayRange = appLanguage === 'ur' ? 'اتوار: بند' : 'Sunday: Closed';
-    } else if (day === 5) {
-      // Friday Jummah Break: 12:30 PM - 02:30 PM
-      const friMorningStart = normalOpenSeconds; // 8:00 AM
-      const friMorningEnd = parseTimeString('12:30 PM'); // 12:30 PM
-      const friEveningStart = parseTimeString('02:30 PM'); // 2:30 PM
-      const friEveningEnd = normalCloseSeconds; // 8:30 PM
-
-      displayRange = '08:00 AM - 12:30 PM & 02:30 PM - 08:30 PM';
-
-      if (nowSeconds >= friMorningStart && nowSeconds < friMorningEnd) {
-        isOpen = true;
-        secondsRemaining = friMorningEnd - nowSeconds;
-      } else if (nowSeconds >= friMorningEnd && nowSeconds < friEveningStart) {
-        isOpen = false;
-        secondsRemaining = friEveningStart - nowSeconds;
-        displayRange = appLanguage === 'ur' ? 'وقفہ: 12:30 PM - 02:30 PM' : 'Break: 12:30 PM - 02:30 PM';
-      } else if (nowSeconds >= friEveningStart && nowSeconds < friEveningEnd) {
-        isOpen = true;
-        secondsRemaining = friEveningEnd - nowSeconds;
-      } else {
-        isOpen = false;
-        if (nowSeconds >= friEveningEnd) {
-          // Closed for Friday night, next is Saturday morning open
-          secondsRemaining = (24 * 3600 - nowSeconds) + normalOpenSeconds;
-        } else {
-          // Morning before 8 AM
-          secondsRemaining = friMorningStart - nowSeconds;
-        }
-      }
-    } else {
-      // Mon - Thu, Sat
-      displayRange = timings?.normalTiming ? timings.normalTiming.replace(/\s*To\s*/i, ' - ') : '08:00 AM - 08:30 PM';
-      
-      if (nowSeconds >= normalOpenSeconds && nowSeconds < normalCloseSeconds) {
-        isOpen = true;
-        secondsRemaining = normalCloseSeconds - nowSeconds;
-      } else {
-        isOpen = false;
-        if (nowSeconds >= normalCloseSeconds) {
-          const isTomorrowSunday = (day === 6);
-          if (isTomorrowSunday) {
-            // Tomorrow is Sunday (Closed), next open is Monday morning
-            secondsRemaining = (24 * 3600 - nowSeconds) + (24 * 3600) + normalOpenSeconds;
-          } else {
-            // Next open is tomorrow morning
-            secondsRemaining = (24 * 3600 - nowSeconds) + normalOpenSeconds;
-          }
-        } else {
-          // Morning before open
-          secondsRemaining = normalOpenSeconds - nowSeconds;
-        }
-      }
-    }
-
-    const h = Math.floor(secondsRemaining / 3600);
-    const m = Math.floor((secondsRemaining % 3600) / 60);
-    const s = secondsRemaining % 60;
-
-    const pad = (num) => String(num).padStart(2, '0');
-    const timeString = `${pad(h)}:${pad(m)}:${pad(s)}`;
-
-    let statusLabel = isOpen 
-      ? (appLanguage === 'ur' ? 'کھلا ہے' : 'OPEN') 
-      : (appLanguage === 'ur' ? 'بند ہے' : 'CLOSED');
-
-    let statusSubLabel = '';
-    if (day === 5 && nowSeconds >= parseTimeString('12:30 PM') && nowSeconds < parseTimeString('02:30 PM')) {
-      statusLabel = appLanguage === 'ur' ? 'وقفہ جمعہ' : 'JUMMAH BREAK';
-      statusSubLabel = appLanguage === 'ur' ? `کھلنے میں: ${timeString}` : `Opens in: ${timeString}`;
-    } else {
-      statusSubLabel = isOpen 
-        ? (appLanguage === 'ur' ? `بند ہونے میں: ${timeString}` : `Closes in: ${timeString}`)
-        : (appLanguage === 'ur' ? `کھلنے میں: ${timeString}` : `Opens in: ${timeString}`);
-    }
-
-    return {
-      isOpen,
-      displayRange,
-      label: statusLabel,
-      subLabel: statusSubLabel
-    };
-  };
-
   const [hospitalTimings, setHospitalTimings] = useState(null);
-  const [hospitalStatus, setHospitalStatus] = useState(getHospitalStatus(null));
-
-  useEffect(() => {
-    setHospitalStatus(getHospitalStatus(hospitalTimings));
-    const timer = setInterval(() => {
-      setHospitalStatus(getHospitalStatus(hospitalTimings));
-    }, 1000);
-
-    return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appLanguage, hospitalTimings]);
 
   const loadData = async (showRefreshedAlert = false) => {
     setHasError(false);
@@ -488,33 +341,9 @@ export default function HomeScreen({ navigation, route }) {
 
   const t = TRANSLATIONS[appLanguage] || TRANSLATIONS.en;
 
-  const flatListRef = useRef(null);
   const insets = useSafeAreaInsets();
   const bottomNavHeight = 65 + (insets.bottom > 0 ? insets.bottom : 15);
   const user = route.params?.user || null;
-
-  useEffect(() => {
-    if (sliderData.length === 0) return;
-
-    const interval = setInterval(() => {
-      let nextIndex = currentIndex + 1;
-      if (nextIndex >= sliderData.length) nextIndex = 0;
-
-      if (flatListRef.current) {
-        try {
-          flatListRef.current.scrollToIndex({
-            index: nextIndex,
-            animated: true,
-          });
-          setCurrentIndex(nextIndex);
-        } catch (error) {
-          console.warn('[Slider] scroll error caught:', error);
-        }
-      }
-    }, 4500);
-
-    return () => clearInterval(interval);
-  }, [currentIndex, sliderData.length]);
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to sign out?', [
@@ -538,22 +367,6 @@ export default function HomeScreen({ navigation, route }) {
       navigation.navigate('Login');
     }
   };
-
-
-  const renderPictureSlide = ({ item }) => (
-    <View style={styles.slideImageContainer}>
-      <Image
-        source={typeof item.image === 'string' ? { uri: item.image } : item.image}
-        style={StyleSheet.absoluteFillObject}
-        contentFit="cover"
-        transition={250}
-      />
-      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.slideOverlay}>
-        <Text style={styles.slideTitle}>{item.title}</Text>
-        <Text style={styles.slideDesc}>{item.desc}</Text>
-      </LinearGradient>
-    </View>
-  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -579,8 +392,8 @@ export default function HomeScreen({ navigation, route }) {
           >
             <Ionicons name="checkmark-circle" size={26} color="#FFFFFF" />
             <View style={styles.toastTextContainer}>
-              <Text style={[styles.toastTitle, appLanguage === 'ur' && fontsLoaded && { fontFamily: 'JameelNoori' }]}>{toastTitle}</Text>
-              <Text style={[styles.toastMessage, appLanguage === 'ur' && fontsLoaded && { fontFamily: 'JameelNoori' }]}>{toastMessage}</Text>
+              <Text style={styles.toastTitle}>{toastTitle}</Text>
+              <Text style={styles.toastMessage}>{toastMessage}</Text>
             </View>
             <TouchableOpacity onPress={hideToast} style={styles.toastCloseBtn} activeOpacity={0.7}>
               <Ionicons name="close" size={20} color="#FFFFFF" />
@@ -611,7 +424,7 @@ export default function HomeScreen({ navigation, route }) {
           </MotiView>
           <ActivityIndicator size="large" color="#FFFFFF" style={{ marginTop: 20 }} />
           <Text style={styles.loadingTextEnglish}>Loading Hospital Portal...</Text>
-          <Text style={[styles.loadingTextUrdu, fontsLoaded && { fontFamily: 'JameelNoori' }]}>پینم کینسر ہسپتال پورٹل لوڈ ہو رہا ہے...</Text>
+          <Text style={styles.loadingTextUrdu}>پینم کینسر ہسپتال پورٹل لوڈ ہو رہا ہے...</Text>
         </View>
       )}
 
@@ -635,8 +448,8 @@ export default function HomeScreen({ navigation, route }) {
             
             <View style={styles.errorDivider} />
             
-            <Text style={[styles.errorTitleUrdu, fontsLoaded && { fontFamily: 'JameelNoori' }]}>سرور سے رابطہ نہ ہو سکا</Text>
-            <Text style={[styles.errorTextUrdu, fontsLoaded && { fontFamily: 'JameelNoori' }]}>ہسپتال سرور سے رابطہ نہیں ہو سکا۔ برائے مہربانی اپنا انٹرنیٹ کنکشن چیک کریں۔</Text>
+            <Text style={styles.errorTitleUrdu}>سرور سے رابطہ نہ ہو سکا</Text>
+            <Text style={styles.errorTextUrdu}>ہسپتال سرور سے رابطہ نہیں ہو سکا۔ برائے مہربانی اپنا انٹرنیٹ کنکشن چیک کریں۔</Text>
             
             <TouchableOpacity
               style={styles.refreshAppBtn}
@@ -766,7 +579,7 @@ export default function HomeScreen({ navigation, route }) {
               transition={{ duration: 600, delay: 200 }}
               style={styles.urduContainer}
             >
-              <Text style={[styles.urduText, fontsLoaded && { fontFamily: 'JameelNoori' }]} numberOfLines={1}>
+              <Text style={styles.urduText} numberOfLines={1}>
                 پینم کینسر ہسپتال
               </Text>
             </MotiView>
@@ -774,23 +587,7 @@ export default function HomeScreen({ navigation, route }) {
             <Text style={styles.tagline} numberOfLines={1}>{t.tagline}</Text>
           </View>
 
-          <MotiView
-            from={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'timing', duration: 600, delay: 300 }}
-            style={styles.headerStatusContainer}
-          >
-            <View style={styles.statusBadgeRow}>
-              <View style={[styles.statusDot, { backgroundColor: hospitalStatus.isOpen ? '#25D366' : '#E74C3C' }]} />
-              <Text style={[styles.statusText, { color: hospitalStatus.isOpen ? '#25D366' : '#FF6B6B' }]}>
-                {hospitalStatus.label}
-              </Text>
-            </View>
-            <Text style={styles.statusHoursText}>{hospitalStatus.displayRange}</Text>
-            <Text style={styles.statusTimerText}>
-              {hospitalStatus.subLabel}
-            </Text>
-          </MotiView>
+          <HospitalTimingBadge timings={hospitalTimings} language={appLanguage} />
         </View>
       </LinearGradient>
 
@@ -806,35 +603,7 @@ export default function HomeScreen({ navigation, route }) {
           />
         }
       >
-        <MotiView
-          from={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'timing', duration: 600 }}
-          style={styles.sliderContainer}
-        >
-          <FlatList
-            ref={flatListRef}
-            data={sliderData}
-            renderItem={renderPictureSlide}
-            keyExtractor={(item) => item.id}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={(event) => {
-              const newIndex = Math.round(event.nativeEvent.contentOffset.x / SLIDER_WIDTH);
-              setCurrentIndex(newIndex);
-            }}
-          />
-
-          <View style={styles.pagination}>
-            {sliderData.map((_, index) => (
-              <View
-                key={index}
-                style={[styles.dot, currentIndex === index ? styles.activeDot : styles.inactiveDot]}
-              />
-            ))}
-          </View>
-        </MotiView>
+        <HeroImageSlider customSlides={sliderData} />
 
         <MotiView
           from={{ opacity: 0, translateY: 20 }}
@@ -952,7 +721,7 @@ export default function HomeScreen({ navigation, route }) {
                 {/* Right Visual Infographic Thumbnail */}
                 <View style={styles.sehatThumbWrapper}>
                   <Image
-                    source={{ uri: PUNJAB_HEALTH_CARD_BASE64 }}
+                    source={PUNJAB_HEALTH_CARD_IMG}
                     style={styles.sehatThumbImage}
                     contentFit="cover"
                   />
@@ -1035,7 +804,7 @@ export default function HomeScreen({ navigation, route }) {
                 {/* Right Visual Poster Thumbnail with Preview Badge */}
                 <View style={styles.samplingThumbWrapper}>
                   <Image
-                    source={{ uri: HOME_SAMPLING_POSTER_BASE64 }}
+                    source={HOME_SAMPLING_POSTER_IMG}
                     style={styles.samplingThumbImage}
                     contentFit="cover"
                   />
@@ -1408,7 +1177,7 @@ export default function HomeScreen({ navigation, route }) {
               {/* Official Poster Container */}
               <View style={styles.posterCardWrapper}>
                 <Image
-                  source={{ uri: HOME_SAMPLING_POSTER_BASE64 }}
+                  source={HOME_SAMPLING_POSTER_IMG}
                   style={styles.fullPosterImage}
                   contentFit="contain"
                 />

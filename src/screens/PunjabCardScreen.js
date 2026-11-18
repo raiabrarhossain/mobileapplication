@@ -15,7 +15,7 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
 import { Image } from 'expo-image';
-import { PUNJAB_HEALTH_CARD_BASE64 } from '../assets/punjab_health_card_base64';
+const PUNJAB_HEALTH_CARD_IMG = require('../assets/punjab_health_card.jpg');
 
 const { width } = Dimensions.get('window');
 
@@ -322,7 +322,7 @@ export default function PunjabCardScreen({ navigation, route }) {
           >
             <View style={styles.posterThumbBox}>
               <Image
-                source={{ uri: PUNJAB_HEALTH_CARD_BASE64 }}
+                source={PUNJAB_HEALTH_CARD_IMG}
                 style={styles.posterThumb}
                 contentFit="cover"
               />
@@ -477,7 +477,7 @@ export default function PunjabCardScreen({ navigation, route }) {
             </View>
             <View style={styles.posterModalImageContainer}>
               <Image
-                source={{ uri: PUNJAB_HEALTH_CARD_BASE64 }}
+                source={PUNJAB_HEALTH_CARD_IMG}
                 style={styles.fullPoster}
                 contentFit="contain"
               />

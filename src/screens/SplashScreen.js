@@ -1,18 +1,12 @@
 // src/screens/SplashScreen.js
 import { useEffect, useRef } from 'react';
-import { Animated, StatusBar, StyleSheet } from 'react-native';
+import { Animated, StatusBar, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts } from 'expo-font';
-import { MotiText } from 'moti';
+import { MotiText, MotiView } from 'moti';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import { Image } from 'expo-image';
 
 export default function SplashScreen({ navigation }) {
-  const [fontsLoaded] = useFonts({
-    'JameelNoori': require('../assets/fonts/JameelNooriNastaleeq.ttf'),
-    'Amiri': require('../assets/fonts/Amiri-Regular.ttf'),
-  });
-
   const logoScale = useRef(new Animated.Value(1)).current;
   const logoOpacity = useRef(new Animated.Value(1)).current;
 
@@ -50,31 +44,29 @@ export default function SplashScreen({ navigation }) {
           useNativeDriver: true,
         }),
       ]),
-      Animated.delay(100),
-      // 2. Re-create (spring scale down to 1 and fade in)
+      // 2. Re-create / Reform smoothly
       Animated.parallel([
         Animated.spring(logoScale, {
           toValue: 1,
-          tension: 15,
-          friction: 4,
+          friction: 5,
+          tension: 40,
           useNativeDriver: true,
         }),
         Animated.timing(logoOpacity, {
           toValue: 1,
-          duration: 1000,
+          duration: 600,
           useNativeDriver: true,
         }),
       ]),
     ]).start();
 
-    // Navigate to Home screen after the sequence finishes
+    // Navigate to Home screen after splash animation completes
     const timer = setTimeout(() => {
-      if (navigation) navigation.replace('Home');
-    }, 4200);
+      navigation.replace('Home');
+    }, 3500);
 
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [navigation, logoOpacity, logoScale]);
 
   return (
     <LinearGradient 
@@ -85,15 +77,20 @@ export default function SplashScreen({ navigation }) {
     >
       <StatusBar hidden />
       
-      {/* 1. Bismillah calligraphic text at the top */}
-      <MotiText 
+      {/* 1. Bismillah calligraphic artwork at the top */}
+      <MotiView 
         from={{ opacity: 0, translateY: -20 }}
         animate={{ opacity: 1, translateY: 0 }}
         transition={{ type: 'timing', duration: 1000, delay: 200 }}
-        style={[styles.bismillah, fontsLoaded && { fontFamily: 'Amiri' }]}
+        style={styles.bismillahContainer}
       >
-        بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-      </MotiText>
+        <Image
+          source={require('../assets/bismillah.png')}
+          style={styles.bismillahImage}
+          contentFit="contain"
+          tintColor="#FFFFFF"
+        />
+      </MotiView>
 
       {/* 2. Animated Logo Container */}
       <Animated.View
@@ -122,12 +119,12 @@ export default function SplashScreen({ navigation }) {
         PINUM HOSPITAL
       </MotiText>
 
-      {/* 4. Khushamdeed in Nastaliq */}
+      {/* 4. Khushamdeed */}
       <MotiText 
         from={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ type: 'timing', duration: 1000, delay: 2000 }}
-        style={[styles.khushamdeed, fontsLoaded && { fontFamily: 'JameelNoori' }]}
+        style={styles.khushamdeed}
       >
         خوش آمدید
       </MotiText>
@@ -139,7 +136,7 @@ export default function SplashScreen({ navigation }) {
         transition={{ type: 'timing', duration: 800, delay: 2400 }}
         style={styles.subtitle}
       >
-        Caring for your health
+        Excellence in Nuclear Medicine & Cancer Care
       </MotiText>
     </LinearGradient>
   );
@@ -152,15 +149,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20
   },
-  bismillah: {
-    fontSize: 26,
-    color: '#E3F2FD',
-    textAlign: 'center',
-    marginBottom: 40,
-    lineHeight: 38,
-    textShadowColor: 'rgba(0,0,0,0.15)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3
+  bismillahContainer: {
+    height: 44,
+    width: 260,
+    marginBottom: 35,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bismillahImage: {
+    width: '100%',
+    height: '100%',
   },
   logoContainer: {
     width: 140,
@@ -193,6 +191,7 @@ const styles = StyleSheet.create({
   },
   khushamdeed: {
     fontSize: 32,
+    fontWeight: 'bold',
     color: 'white',
     textAlign: 'center',
     marginTop: 15,
@@ -208,6 +207,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     opacity: 0.9,
     textAlign: 'center',
-    fontStyle: 'italic'
+    paddingHorizontal: 10
   }
 });

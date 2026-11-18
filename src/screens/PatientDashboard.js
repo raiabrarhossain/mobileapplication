@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LoadingScreen from '../components/LoadingScreen';
 import BottomNavBar from '../components/BottomNavBar';
 import InAppPushBanner from '../components/InAppPushBanner';
+import PDFViewerModal from '../components/PDFViewerModal';
 import { fetchPatientReports, getReportDownloadUrl } from '../services/api';
 import { checkNewReports } from '../services/notificationService';
 
@@ -45,6 +46,15 @@ export default function PatientDashboard({ navigation, route }) {
   const [downloadedFiles, setDownloadedFiles] = useState({});
   const [activeBannerNotification, setActiveBannerNotification] = useState(null);
   const [isBannerVisible, setIsBannerVisible] = useState(false);
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerTitle, setViewerTitle] = useState('');
+  const [viewerUri, setViewerUri] = useState(null);
+
+  const viewReportInApp = (uri, title) => {
+    setViewerTitle(title || 'PINUM Medical Report');
+    setViewerUri(uri);
+    setViewerVisible(true);
+  };
 
   const lang = route.params?.language || 'en';
 
@@ -265,7 +275,7 @@ export default function PatientDashboard({ navigation, route }) {
 
       setDownloadedFiles((prev) => ({ ...prev, [uniqueId]: downloadResult.uri }));
 
-      await openOrShareFile(downloadResult.uri, desc);
+      viewReportInApp(downloadResult.uri, desc || 'PINUM Diagnostic Report');
     } catch (error) {
       console.log('PDF DOWNLOAD ERROR:', error);
       Alert.alert(
@@ -345,18 +355,22 @@ export default function PatientDashboard({ navigation, route }) {
             <View style={styles.actionRow}>
               <TouchableOpacity
                 style={styles.openBtn}
-                onPress={() => openOrShareFile(savedFileUri, testName)}
+                onPress={() => viewReportInApp(savedFileUri, `${testName} Report`)}
               >
-                <Ionicons name="folder-open-outline" size={18} color={COLORS.primary} />
-                <Text style={styles.openText}>Open File</Text>
+                <Ionicons name="eye-outline" size={18} color={COLORS.primary} />
+                <Text style={styles.openText}>
+                  {lang === 'ur' ? 'ایپ میں دیکھیں' : 'View in App'}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.whatsappBtn}
                 onPress={() => openOrShareFile(savedFileUri, testName)}
               >
-                <Ionicons name="logo-whatsapp" size={18} color={COLORS.white} />
-                <Text style={styles.whatsappText}>Share</Text>
+                <Ionicons name="share-social-outline" size={18} color={COLORS.white} />
+                <Text style={styles.whatsappText}>
+                  {lang === 'ur' ? 'شیئر' : 'Share'}
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -375,8 +389,10 @@ export default function PatientDashboard({ navigation, route }) {
                   <ActivityIndicator size="small" color={COLORS.white} />
                 ) : (
                   <>
-                    <Text style={styles.downloadBtnText}>Download Report</Text>
-                    <Ionicons name="cloud-download-outline" size={18} color={COLORS.white} />
+                    <Text style={styles.downloadBtnText}>
+                      {lang === 'ur' ? 'رپورٹ دیکھیں (PDF)' : 'View Report (PDF)'}
+                    </Text>
+                    <Ionicons name="document-text-outline" size={18} color={COLORS.white} style={{ marginLeft: 6 }} />
                   </>
                 )}
               </LinearGradient>
@@ -481,6 +497,15 @@ export default function PatientDashboard({ navigation, route }) {
         activeTab="reports"
         navigation={navigation}
         user={user}
+        language={lang}
+      />
+
+      {/* In-App PDF Document Viewer */}
+      <PDFViewerModal
+        visible={viewerVisible}
+        title={viewerTitle}
+        pdfUri={viewerUri}
+        onClose={() => setViewerVisible(false)}
         language={lang}
       />
     </SafeAreaView>

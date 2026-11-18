@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomNavBar from '../components/BottomNavBar';
+import PDFViewerModal from '../components/PDFViewerModal';
 import { fetchLabRates } from '../services/api';
 
 const GRADIENT_COLORS = ['#0B2265', '#1B6CA8'];
@@ -121,6 +122,8 @@ export default function LabRatesScreen({ navigation, route }) {
   const [selectedTests, setSelectedTests] = useState([]);
   const [showSlip, setShowSlip] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerUri, setViewerUri] = useState(null);
 
   // Tick marks for add-on charges (Patient can add or remove)
   const [includeRegFee, setIncludeRegFee] = useState(true);
@@ -333,8 +336,9 @@ export default function LabRatesScreen({ navigation, route }) {
         to: newPath
       });
 
-      Alert.alert(t.successTitle, t.successMsg);
-      await shareAsync(newPath, { UTI: '.pdf', mimeType: 'application/pdf', dialogTitle: 'Share / Save Rate Slip' });
+      setShowSlip(false);
+      setViewerUri(newPath);
+      setViewerVisible(true);
     } catch (_error) {
       Alert.alert(t.errorTitle, t.errorMsg);
     } finally {
@@ -419,7 +423,7 @@ export default function LabRatesScreen({ navigation, route }) {
     </View>
   );
 
-  const renderItem = ({ item }) => {
+  const renderItem = useCallback(({ item }) => {
     const isWalkIn = !item.isAppointmentReq;
     const isSelected = selectedTests.some(selected => selected.serviceName === item.serviceName);
 
@@ -458,7 +462,7 @@ export default function LabRatesScreen({ navigation, route }) {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [selectedTests, t, toggleSelection]);
 
   const hasAnySelection = selectedTests.length > 0 || includeHomeSampling;
 
@@ -520,9 +524,9 @@ export default function LabRatesScreen({ navigation, route }) {
               { paddingBottom: hasAnySelection ? 160 : 90 }
             ]}
             showsVerticalScrollIndicator={false}
-            initialNumToRender={15}
-            maxToRenderPerBatch={15}
-            windowSize={15}
+            initialNumToRender={10}
+            maxToRenderPerBatch={10}
+            windowSize={5}
             removeClippedSubviews={Platform.OS === 'android'}
             ListEmptyComponent={
               <View style={styles.center}>
@@ -684,6 +688,15 @@ export default function LabRatesScreen({ navigation, route }) {
         activeTab="lab"
         navigation={navigation}
         user={user}
+        language={lang}
+      />
+
+      {/* In-App PDF Slip Viewer */}
+      <PDFViewerModal
+        visible={viewerVisible}
+        title={t.slipTitle}
+        pdfUri={viewerUri}
+        onClose={() => setViewerVisible(false)}
         language={lang}
       />
     </SafeAreaView>
@@ -925,7 +938,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    elevation: 12,
+    elevation: 25,
+    zIndex: 99,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,

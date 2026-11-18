@@ -1,11 +1,12 @@
 import React from 'react';
 import { Image } from 'react-native';
-import { CHATBOT_ROBOT_BASE64 } from '../assets/chatbot_robot_base64';
 
-export default function ChatbotIcon({ size = 48, style, resizeMode = 'contain' }) {
+const ROBOT_ICON = require('../assets/chatbot_robot.png');
+
+function ChatbotIcon({ size = 48, style, resizeMode = 'contain' }) {
   return (
     <Image
-      source={{ uri: CHATBOT_ROBOT_BASE64 }}
+      source={ROBOT_ICON}
       style={[
         {
           width: size,
@@ -17,3 +18,5 @@ export default function ChatbotIcon({ size = 48, style, resizeMode = 'contain' }
     />
   );
 }
+
+export default React.memo(ChatbotIcon);

@@ -10,7 +10,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
-export default function BottomNavBar({
+function BottomNavBar({
   activeTab = 'home', // 'home' | 'reports' | 'lab' | 'settings'
   navigation,
   user = null,
@@ -242,3 +242,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+export default React.memo(BottomNavBar);
