@@ -57,3 +57,5 @@ build_log*.txt
 
 ios_bundle/
 create_handover_package.py
+
+sanitize_official_docs.py
