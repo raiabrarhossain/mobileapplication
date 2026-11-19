@@ -51,3 +51,6 @@ current_screen*.png
 screenshot_*.png
 *.log
 build_log*.txt
+
+*.iso
+*.zip
