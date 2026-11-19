@@ -54,3 +54,6 @@ build_log*.txt
 
 *.iso
 *.zip
+
+ios_bundle/
+create_handover_package.py
