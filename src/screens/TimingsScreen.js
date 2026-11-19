@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MotiView } from 'moti';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -9,9 +12,6 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { MotiView } from 'moti';
 import { fetchHospitalTimings } from '../services/api';
 
 const COLORS = {
@@ -142,12 +142,12 @@ export default function TimingsScreen({ navigation, route }) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" />
-      
+
       {/* Dynamic Animated Header */}
-      <LinearGradient 
-        colors={[COLORS.primary, COLORS.accent]} 
-        start={{ x: 0, y: 0 }} 
-        end={{ x: 1, y: 1 }} 
+      <LinearGradient
+        colors={[COLORS.primary, COLORS.accent]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={styles.header}
       >
         <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
@@ -167,11 +167,11 @@ export default function TimingsScreen({ navigation, route }) {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          
+
           {/* Main Status Glassmorphism Card */}
-          <MotiView 
-            from={{ opacity: 0, scale: 0.9 }} 
-            animate={{ opacity: 1, scale: 1 }} 
+          <MotiView
+            from={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ type: 'spring', duration: 800 }}
             style={styles.statusCard}
           >
@@ -216,7 +216,7 @@ export default function TimingsScreen({ navigation, route }) {
                 <MaterialCommunityIcons name="calendar-clock" size={24} color={COLORS.primary} />
                 <Text style={styles.cardTitle}>{data?.timeDescription || (lang === 'ur' ? 'باقاعدہ شیڈول' : 'Regular Schedule')}</Text>
               </View>
-              
+
               <View style={styles.scheduleBox}>
                 {/* Mon - Thu timing */}
                 <View style={styles.scheduleRow}>
@@ -250,9 +250,9 @@ export default function TimingsScreen({ navigation, route }) {
                       <Text style={styles.timeTextWarning}>
                         {data?.fridayBreak && data.fridayBreak.includes('02:30')
                           ? data.fridayBreak
-                          : (lang === 'ur' 
-                              ? '08:00 AM سے 12:30 PM اور 02:30 PM سے 08:30 PM' 
-                              : '08:00 AM To 12:30 PM & 02:30 PM To 08:30 PM')}
+                          : (lang === 'ur'
+                            ? '08:00 AM سے 12:30 PM اور 02:30 PM سے 08:30 PM'
+                            : '08:00 AM To 12:30 PM & 02:30 PM To 08:30 PM')}
                       </Text>
                     </LinearGradient>
                   </View>
@@ -299,7 +299,7 @@ export default function TimingsScreen({ navigation, route }) {
                 <Text style={styles.instructionTitle}>{t.instructionsTitle}</Text>
               </View>
               <Text style={styles.instructionTextUrdu}>{data?.importantInstructions}</Text>
-              
+
               {data?.discountNotice ? (
                 <View style={styles.noticeSubBox}>
                   <Text style={styles.noticeSubTextUrdu}>{data?.discountNotice}</Text>
