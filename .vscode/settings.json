@@ -3,5 +3,9 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  }
+  },
+  "java.import.gradle.version": "8.14.3",
+  "java.import.gradle.wrapper.enabled": true,
+  "gradle.nestedProjects": true,
+  "java.configuration.updateBuildConfiguration": "automatic"
 }
