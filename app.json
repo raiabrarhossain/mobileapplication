@@ -46,6 +46,12 @@
           "backgroundColor": "#ffffff"
         }
       ],
+      [
+        "expo-font",
+        {
+          "fonts": ["./src/assets/fonts/JameelNooriNastaleeq.ttf"]
+        }
+      ],
       "./plugins/withAndroidCertificates"
     ],
     "experiments": {

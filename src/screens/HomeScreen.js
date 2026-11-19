@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
 import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { Image } from 'expo-image';
+import { useFonts } from 'expo-font';
 import {
   Alert,
   Dimensions,
@@ -34,6 +35,13 @@ const PUNJAB_HEALTH_CARD_IMG = require('../assets/punjab_health_card.jpg');
 
 const { width } = Dimensions.get('window');
 const SLIDER_WIDTH = width - 40;
+
+const URDU_FONT = 'JameelNooriNastaleeq';
+
+const isUrduText = (text) => {
+  if (!text || typeof text !== 'string') return false;
+  return /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
+};
 
 const GRADIENT_COLORS = ['#2D9CDB', '#8E44AD'];
 const DASHBOARD_GRADIENT = ['#27AE60', '#2ecc71'];
@@ -151,6 +159,11 @@ const TRANSLATIONS = {
 };
 
 export default function HomeScreen({ navigation, route }) {
+  const [_fontsLoaded] = useFonts({
+    JameelNooriNastaleeq: require('../assets/fonts/JameelNooriNastaleeq.ttf'),
+    'Jameel Noori Nastaleeq': require('../assets/fonts/JameelNooriNastaleeq.ttf'),
+  });
+
   const [sliderData, setSliderData] = useState(null);
 
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
@@ -567,7 +580,9 @@ export default function HomeScreen({ navigation, route }) {
 
         <View style={styles.headerContentRow}>
           <View style={styles.headerTextCol}>
-            <Text style={styles.welcomeText}>{user ? 'Welcome back,' : t.welcome}</Text>
+            <Text style={[styles.welcomeText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 16, lineHeight: 28 }]}>
+              {user ? 'Welcome back,' : t.welcome}
+            </Text>
             <Text style={styles.hospitalName} numberOfLines={1} adjustsFontSizeToFit>
               {user ? user.fullName || 'Patient' : 'AECH PINUM Cancer Hospital'}
             </Text>
@@ -583,7 +598,9 @@ export default function HomeScreen({ navigation, route }) {
               </Text>
             </MotiView>
 
-            <Text style={styles.tagline} numberOfLines={1}>{t.tagline}</Text>
+            <Text style={[styles.tagline, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 14, lineHeight: 24 }]} numberOfLines={1}>
+              {t.tagline}
+            </Text>
           </View>
 
           <HospitalTimingBadge timings={hospitalTimings} language={appLanguage} />
@@ -626,16 +643,16 @@ export default function HomeScreen({ navigation, route }) {
               style={styles.bannerContainer}
             >
               <View style={styles.bannerTextContainer}>
-                <Text style={styles.bannerTitle}>
+                <Text style={[styles.bannerTitle, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 20, lineHeight: 32 }]}>
                   {user ? (user.role === 'Admin' ? 'Admin Portal' : 'Your Reports') : t.patientPortal}
                 </Text>
 
-                <Text style={styles.bannerDesc}>
+                <Text style={[styles.bannerDesc, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 13.5, lineHeight: 24 }]}>
                   {user ? 'Access your dashboard and features securely.' : t.portalDesc}
                 </Text>
 
                 <View style={styles.bannerBtn}>
-                  <Text style={[styles.bannerBtnText, user && { color: '#27AE60' }]}>
+                  <Text style={[styles.bannerBtnText, user && { color: '#27AE60' }, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 13.5, lineHeight: 22 }]}>
                     {user ? t.dashboard : t.loginNow}
                   </Text>
                 </View>
@@ -675,19 +692,19 @@ export default function HomeScreen({ navigation, route }) {
                   <View style={styles.sehatBadgeRow}>
                     <View style={styles.sehatBadgePill}>
                       <FontAwesome5 name="heartbeat" size={10} color="#073B25" />
-                      <Text style={styles.sehatBadgeText}>
+                      <Text style={[styles.sehatBadgeText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 11, lineHeight: 18 }]}>
                         {t.sehatCardBadge}
                       </Text>
                     </View>
                     <View style={styles.sehatLimitPill}>
                       <Ionicons name="shield-checkmark" size={11} color="#FFE600" />
-                      <Text style={styles.sehatLimitText}>
+                      <Text style={[styles.sehatLimitText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 11, lineHeight: 18 }]}>
                         {t.sehatCardLimit}
                       </Text>
                     </View>
                   </View>
 
-                  <Text style={styles.sehatHeadline}>
+                  <Text style={[styles.sehatHeadline, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 15, lineHeight: 26 }]}>
                     {t.sehatCardSub}
                   </Text>
 
@@ -695,13 +712,13 @@ export default function HomeScreen({ navigation, route }) {
                   <View style={styles.samplingPillsRow}>
                     <View style={styles.samplingPillItem}>
                       <Ionicons name="checkmark-circle" size={13} color="#00E5A3" />
-                      <Text style={styles.samplingPillText}>
+                      <Text style={[styles.samplingPillText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 12, lineHeight: 20 }]}>
                         {appLanguage === 'ur' ? 'کیموتھراپی مفت' : 'Free Chemo & Meds'}
                       </Text>
                     </View>
                     <View style={styles.samplingPillItem}>
                       <Ionicons name="card-outline" size={13} color="#00E5A3" />
-                      <Text style={styles.samplingPillText}>
+                      <Text style={[styles.samplingPillText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 12, lineHeight: 20 }]}>
                         {appLanguage === 'ur' ? 'تمام شناختی کارڈز' : 'All CNICs'}
                       </Text>
                     </View>
@@ -710,7 +727,7 @@ export default function HomeScreen({ navigation, route }) {
                   {/* Action Button */}
                   <View style={styles.sehatActionBtn}>
                     <Ionicons name="document-text" size={13} color="#0E623B" />
-                    <Text style={styles.sehatActionText}>
+                    <Text style={[styles.sehatActionText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 13, lineHeight: 22 }]}>
                       {t.sehatCardBtn}
                     </Text>
                     <Ionicons name="chevron-forward" size={13} color="#0E623B" style={{ marginLeft: 2 }} />
@@ -758,19 +775,19 @@ export default function HomeScreen({ navigation, route }) {
                 <View style={styles.homeSamplingTextCol}>
                   <View style={styles.samplingBadgeRow}>
                     <View style={styles.samplingBadge}>
-                      <Text style={styles.samplingBadgeText}>
+                      <Text style={[styles.samplingBadgeText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 11, lineHeight: 18 }]}>
                         {t.homeSamplingBadge}
                       </Text>
                     </View>
                     <View style={styles.samplingRatePill}>
                       <Ionicons name="pricetag" size={11} color="#FFE600" />
-                      <Text style={styles.samplingRateText}>
+                      <Text style={[styles.samplingRateText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 11, lineHeight: 18 }]}>
                         {t.homeSamplingCharges}
                       </Text>
                     </View>
                   </View>
 
-                  <Text style={styles.homeSamplingHeadline}>
+                  <Text style={[styles.homeSamplingHeadline, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 15, lineHeight: 26 }]}>
                     {t.homeSamplingSub}
                   </Text>
 
@@ -778,22 +795,22 @@ export default function HomeScreen({ navigation, route }) {
                   <View style={styles.samplingPillsRow}>
                     <View style={styles.samplingPillItem}>
                       <Ionicons name="checkmark-circle" size={13} color="#00E5A3" />
-                      <Text style={styles.samplingPillText}>{t.accurateReports}</Text>
+                      <Text style={[styles.samplingPillText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 12, lineHeight: 20 }]}>{t.accurateReports}</Text>
                     </View>
                     <View style={styles.samplingPillItem}>
                       <Ionicons name="shield-checkmark" size={13} color="#00E5A3" />
-                      <Text style={styles.samplingPillText}>{t.affordableRate}</Text>
+                      <Text style={[styles.samplingPillText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 12, lineHeight: 20 }]}>{t.affordableRate}</Text>
                     </View>
                     <View style={styles.samplingPillItem}>
                       <Ionicons name="time" size={13} color="#00E5A3" />
-                      <Text style={styles.samplingPillText}>{t.timeSaving}</Text>
+                      <Text style={[styles.samplingPillText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 12, lineHeight: 20 }]}>{t.timeSaving}</Text>
                     </View>
                   </View>
 
                   {/* Call to action button */}
                   <View style={styles.samplingActionBtn}>
                     <Ionicons name="call" size={13} color="#0B2265" />
-                    <Text style={styles.samplingActionText}>
+                    <Text style={[styles.samplingActionText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 13, lineHeight: 22 }]}>
                       {t.bookSampling}
                     </Text>
                     <Ionicons name="chevron-forward" size={13} color="#0B2265" style={{ marginLeft: 2 }} />
@@ -819,7 +836,9 @@ export default function HomeScreen({ navigation, route }) {
           </TouchableOpacity>
         </MotiView>
 
-        <Text style={styles.sectionTitle}>{t.services}</Text>
+        <Text style={[styles.sectionTitle, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 20, lineHeight: 32 }]}>
+          {t.services}
+        </Text>
 
         <View style={styles.gridContainer}>
           <ImageGridItem
@@ -1556,7 +1575,18 @@ const ImageGridItem = ({ imageUri, label, onPress, index }) => {
             {renderIcon()}
           </LinearGradient>
         </View>
-        <Text style={styles.proCardLabel} numberOfLines={2}>
+        <Text
+          style={[
+            styles.proCardLabel,
+            isUrduText(label) && {
+              fontFamily: URDU_FONT,
+              fontSize: 14.5,
+              lineHeight: 25,
+              paddingTop: 2,
+            },
+          ]}
+          numberOfLines={2}
+        >
           {label}
         </Text>
       </TouchableOpacity>
@@ -1681,12 +1711,13 @@ const styles = StyleSheet.create({
   urduText: {
     color: COLORS.white,
     fontSize: 34,
+    fontFamily: URDU_FONT,
     textAlign: 'left',
     textShadowColor: 'rgba(0, 0, 0, 0.25)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
-    lineHeight: 50,
-    paddingVertical: 2
+    lineHeight: 56,
+    paddingVertical: 4
   },
   tagline: {
     color: '#E3F2FD',

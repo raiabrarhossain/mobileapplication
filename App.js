@@ -1,6 +1,7 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Linking from 'expo-linking';
+import { useFonts } from 'expo-font';
 
 import HomeScreen from './src/screens/HomeScreen';
 import LabRatesScreen from './src/screens/LabRatesScreen';
@@ -75,6 +76,11 @@ const linking = {
 };
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    JameelNooriNastaleeq: require('./src/assets/fonts/JameelNooriNastaleeq.ttf'),
+    'Jameel Noori Nastaleeq': require('./src/assets/fonts/JameelNooriNastaleeq.ttf'),
+  });
+
   return (
     <NavigationContainer linking={linking}>
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Splash">
