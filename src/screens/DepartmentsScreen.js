@@ -66,7 +66,7 @@ export default function DepartmentsScreen({ navigation, route }) {
           setDepartments(mappedData);
         }
       } catch (err) {
-        console.log("API Error:", err);
+        // Suppress API error in production
       } finally {
         setLoading(false);
       }

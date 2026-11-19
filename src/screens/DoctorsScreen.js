@@ -54,8 +54,6 @@ export default function DoctorsScreen({ navigation, route }) {
     setLoading(true);
 
     try {
-      console.log('DOCTORS SCREEN PARAMS:', route?.params);
-
       const dep =
         route?.params?.department ||
         route?.params?.item ||
@@ -73,7 +71,6 @@ export default function DoctorsScreen({ navigation, route }) {
         [];
 
       if (Array.isArray(expertsFromParams) && expertsFromParams.length > 0) {
-        console.log('DOCTORS FROM PARAMS (NO MBBS FILTER):', expertsFromParams);
         setDoctors(expertsFromParams);
         return;
       }
@@ -90,23 +87,13 @@ export default function DoctorsScreen({ navigation, route }) {
         null;
 
       if (departmentId) {
-        console.log('LOADING DOCTORS BY DEPARTMENT ID (NO MBBS FILTER):', departmentId);
-
         const apiDoctors = await fetchExpertsByDepartment(departmentId);
-
-        console.log('DOCTORS API RESPONSE:', apiDoctors);
-
         setDoctors(apiDoctors);
         return;
       }
 
       // CASE 3: No params passed, load all departments and collect all experts
-      console.log('NO DEPARTMENT PARAMS FOUND. LOADING ALL DEPARTMENTS...');
-
       const departments = await fetchDepartments();
-
-      console.log('ALL DEPARTMENTS FOR DOCTORS:', departments);
-
       const allDoctors = [];
 
       if (Array.isArray(departments)) {
@@ -130,11 +117,8 @@ export default function DoctorsScreen({ navigation, route }) {
         });
       }
 
-      console.log('ALL DOCTORS COLLECTED:', allDoctors);
-
       setDoctors(filterMbbsDoctors(allDoctors));
     } catch (error) {
-      console.log('DOCTORS LOAD ERROR:', error);
       setDoctors([]);
     } finally {
       setLoading(false);
@@ -155,12 +139,10 @@ export default function DoctorsScreen({ navigation, route }) {
         })
       );
     } catch (error) {
-      console.log('Doctor back navigation error:', error);
-
       try {
         navigation.navigate('Home');
       } catch (e) {
-        console.log('Home fallback failed:', e);
+        // Fallback suppressed
       }
     }
   };
@@ -250,8 +232,8 @@ export default function DoctorsScreen({ navigation, route }) {
               style={styles.doctorImage}
               contentFit="contain"
               transition={200}
-              onError={(error) => {
-                console.log('DOCTOR IMAGE LOAD ERROR:', imageUrl, error.nativeEvent);
+              onError={() => {
+                // Image fallback handled
               }}
             />
           ) : (

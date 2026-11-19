@@ -72,7 +72,6 @@ export default function PDFViewerModal({
           throw new Error('No PDF URI or data provided.');
         }
       } catch (err) {
-        console.log('[PDFViewerModal] Load error:', err);
         setError(err.message || 'Failed to load PDF document.');
       } finally {
         setLoading(false);
@@ -104,6 +103,25 @@ export default function PDFViewerModal({
     } catch (err) {
       Alert.alert('Share Failed', err.message || 'Could not export file.');
     }
+  };
+
+  const handleClose = async () => {
+    try {
+      setBase64Pdf(null);
+      setError(null);
+      const cacheDir = FileSystem.cacheDirectory;
+      if (cacheDir) {
+        const files = await FileSystem.readDirectoryAsync(cacheDir).catch(() => []);
+        for (const file of files) {
+          if (file.startsWith('temp_view_') && file.endsWith('.pdf')) {
+            await FileSystem.deleteAsync(cacheDir + file, { idempotent: true }).catch(() => {});
+          }
+        }
+      }
+    } catch (e) {
+      // Continue close
+    }
+    onClose();
   };
 
   // PDF.js HTML template for rendering in WebView
@@ -236,12 +254,12 @@ export default function PDFViewerModal({
       visible={visible}
       animationType="slide"
       transparent={false}
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
         {/* Top Header Bar */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
+          <TouchableOpacity onPress={handleClose} style={styles.closeBtn} activeOpacity={0.7}>
             <Ionicons name="close" size={24} color="#FFFFFF" />
           </TouchableOpacity>
 
@@ -284,16 +302,17 @@ export default function PDFViewerModal({
             </View>
           ) : (
             <WebView
-              originWhitelist={['*']}
+              originWhitelist={['about:blank', 'https://cdnjs.cloudflare.com']}
               source={{ html: renderPdfHtml() }}
               style={styles.webview}
               scalesPageToFit={Platform.OS === 'android'}
               javaScriptEnabled={true}
-              domStorageEnabled={true}
-              mixedContentMode="always"
-              allowFileAccess={true}
-              allowFileAccessFromFileURLs={true}
-              allowUniversalAccessFromFileURLs={true}
+              domStorageEnabled={false}
+              mixedContentMode="never"
+              allowFileAccess={false}
+              allowFileAccessFromFileURLs={false}
+              allowUniversalAccessFromFileURLs={false}
+              allowsInlineMediaPlayback={false}
               startInLoadingState={true}
               renderLoading={() => (
                 <View style={styles.webviewLoading}>

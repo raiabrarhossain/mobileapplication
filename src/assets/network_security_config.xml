@@ -1,18 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-  <domain-config cleartextTrafficPermitted="true">
+  <!-- Enforce strict HTTPS for PINUM domains with TLS pinning and reject user-installed CAs -->
+  <domain-config cleartextTrafficPermitted="false">
     <domain includeSubdomains="true">pinum.org.pk</domain>
     <domain includeSubdomains="true">www.pinum.org.pk</domain>
     <trust-anchors>
+      <!-- Trust only verified system CAs and bundled PINUM CA -->
       <certificates src="@raw/gogetssl_ca" />
       <certificates src="system" />
-      <certificates src="user" />
     </trust-anchors>
+    <pin-set expiration="2027-06-03">
+      <!-- Leaf Certificate SPKI Pin -->
+      <pin digest="SHA-256">P7fqWwRkdyR51e2mQ6Yp/Nmj+Hyre5z+VgQOPXs6p9Y=</pin>
+      <!-- Intermediate GoGetSSL CA SPKI Pin -->
+      <pin digest="SHA-256">T+6uyT5C6WT480t2wqX2OJ3ZrNt2j8v52bWLj+XIvz8=</pin>
+    </pin-set>
   </domain-config>
-  <base-config cleartextTrafficPermitted="true">
+
+  <!-- Global base config: Absolutely NO cleartext traffic allowed, reject user CAs -->
+  <base-config cleartextTrafficPermitted="false">
     <trust-anchors>
       <certificates src="system" />
-      <certificates src="user" />
     </trust-anchors>
   </base-config>
 </network-security-config>

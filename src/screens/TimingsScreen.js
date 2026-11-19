@@ -95,7 +95,6 @@ export default function TimingsScreen({ navigation, route }) {
         setData(FALLBACK_TIMINGS);
       }
     } catch (error) {
-      console.log('Failed to fetch timings, using fallback:', error);
       setData(FALLBACK_TIMINGS);
     } finally {
       setLoading(false);

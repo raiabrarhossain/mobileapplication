@@ -47,7 +47,6 @@ export const getNotifications = async () => {
     const parsed = JSON.parse(content);
     return Array.isArray(parsed) ? parsed : DEFAULT_NOTIFICATIONS;
   } catch (error) {
-    console.log('[NotificationService] getNotifications error:', error);
     return DEFAULT_NOTIFICATIONS;
   }
 };
@@ -57,7 +56,6 @@ export const saveNotifications = async (notifications) => {
     await FileSystem.writeAsStringAsync(NOTIFICATIONS_FILE, JSON.stringify(notifications));
     return true;
   } catch (error) {
-    console.log('[NotificationService] saveNotifications error:', error);
     return false;
   }
 };
@@ -80,7 +78,6 @@ export const addNotification = async ({ title, titleUrdu, message, messageUrdu, 
     await saveNotifications(updated);
     return newEntry;
   } catch (error) {
-    console.log('[NotificationService] addNotification error:', error);
     return null;
   }
 };
@@ -92,7 +89,6 @@ export const markAllAsRead = async () => {
     await saveNotifications(updated);
     return updated;
   } catch (error) {
-    console.log('[NotificationService] markAllAsRead error:', error);
     return [];
   }
 };
@@ -160,7 +156,6 @@ export const checkNewReports = async (user, reports = []) => {
 
     return [];
   } catch (error) {
-    console.log('[NotificationService] checkNewReports error:', error);
     return [];
   }
 };

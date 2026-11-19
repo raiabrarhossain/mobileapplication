@@ -12,13 +12,20 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.abrar.pinumapp",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": false
+        },
+        "NSCameraUsageDescription": "PINUM uses camera to capture test prescription slips for consultation.",
+        "NSPhotoLibraryUsageDescription": "PINUM accesses photos to select test prescription slips for consultation."
       }
     },
     "android": {
       "package": "com.abrar.pinumapp",
       "versionCode": 1,
-      "usesCleartextTraffic": true,
+      "usesCleartextTraffic": false,
+      "allowBackup": false,
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/pinum_logo.png",

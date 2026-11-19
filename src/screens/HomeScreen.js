@@ -275,7 +275,7 @@ export default function HomeScreen({ navigation, route }) {
           }
         }
       } catch (err) {
-        console.log('Error loading notifications in HomeScreen:', err);
+        // Suppress notification load errors
       }
 
       if (showRefreshedAlert) {
@@ -285,7 +285,6 @@ export default function HomeScreen({ navigation, route }) {
         );
       }
     } catch (error) {
-      console.log('Error loading HomeScreen data:', error);
       setHasError(true);
     } finally {
       setIsLoading(false);
@@ -911,7 +910,6 @@ export default function HomeScreen({ navigation, route }) {
         animationType="slide"
         transparent={true}
         onRequestClose={() => {
-          console.log('[Diagnostic] Settings Modal closing via back button');
           setIsSettingsVisible(false);
         }}
       >
@@ -1024,7 +1022,6 @@ export default function HomeScreen({ navigation, route }) {
         animationType="slide"
         transparent={true}
         onRequestClose={() => {
-          console.log('[Diagnostic] Contact Modal closing via back button');
           setIsContactVisible(false);
         }}
       >

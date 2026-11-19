@@ -36,11 +36,15 @@ const COLORS = {
 export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [captchaCode, setCaptchaCode] = useState('A'); 
+  const [captchaCode, setCaptchaCode] = useState('7K2M9'); 
   const [userCaptcha, setUserCaptcha] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false); 
+
+  // Rate Limiting & Brute-force Lockout (M3 · CWE-307)
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutTimer, setLockoutTimer] = useState(0);
 
   const [focusedInput, setFocusedInput] = useState(null); 
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); 
@@ -60,11 +64,36 @@ export default function LoginScreen({ navigation }) {
     }, 150);
   };
 
-  useEffect(() => { generateCaptcha(); }, []);
+  useEffect(() => { 
+    generateCaptcha(); 
+  }, []);
+
+  useEffect(() => {
+    let interval = null;
+    if (lockoutTimer > 0) {
+      interval = setInterval(() => {
+        setLockoutTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [lockoutTimer]);
 
   const generateCaptcha = () => {
-    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'; 
-    setCaptchaCode(chars.charAt(Math.floor(Math.random() * chars.length)));
+    // 5-Character alphanumeric code excluding confusing characters
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; 
+    let code = '';
+    for (let i = 0; i < 5; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setCaptchaCode(code);
     setUserCaptcha(''); 
   };
 
@@ -86,11 +115,23 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = async () => {
     clearError();
 
+    if (lockoutTimer > 0) {
+      showError(`Account locked due to multiple failed attempts. Wait ${lockoutTimer}s.`, "general");
+      return;
+    }
+
     // ✅ LOCAL VALIDATION ERRORS
     if (!username) { showError("Please enter your PRN Number.", "prn"); return; }
     if (!password) { showError("Please enter your Password.", "password"); return; }
-    if (userCaptcha.toUpperCase() !== captchaCode) { 
-        showError("Security Code is incorrect. Please try again.", "captcha"); 
+    if (userCaptcha.trim().toUpperCase() !== captchaCode) { 
+        const attempts = failedAttempts + 1;
+        setFailedAttempts(attempts);
+        if (attempts >= 5) {
+          setLockoutTimer(60);
+          showError("Account locked (60s) due to multiple failed verification attempts.", "general");
+        } else {
+          showError(`Security Code is incorrect. (${5 - attempts} attempts left)`, "captcha"); 
+        }
         generateCaptcha();
         return; 
     }
@@ -99,6 +140,8 @@ export default function LoginScreen({ navigation }) {
     try {
       const userData = await loginUser(username, password, captchaCode);
       
+      setFailedAttempts(0);
+      setLockoutTimer(0);
       setLoading(false);
       setLoginSuccess(true);
       
@@ -111,12 +154,20 @@ export default function LoginScreen({ navigation }) {
       generateCaptcha();
       setUserCaptcha(''); // Clear wrong captcha input
       
+      const attempts = failedAttempts + 1;
+      setFailedAttempts(attempts);
+      if (attempts >= 5) {
+        setLockoutTimer(60);
+        showError("Account locked (60s) due to multiple failed login attempts.", "general");
+        return;
+      }
+
       // ✅ SMART API ERROR DETECTION
       const apiMsg = (error.message || '').toLowerCase();
       if (apiMsg.includes('incorrect prn or password') || (apiMsg.includes('prn') && apiMsg.includes('password'))) {
-          showError("Incorrect PRN or Password. Please verify and try again.", "password");
+          showError(`Incorrect PRN or Password. (${5 - attempts} attempts remaining)`, "password");
       } else if (apiMsg.includes('password') || apiMsg.includes('credentials')) {
-          showError("Incorrect Password. Please try again.", "password");
+          showError(`Incorrect Password. (${5 - attempts} attempts remaining)`, "password");
       } else if (apiMsg.includes('prn') || apiMsg.includes('user') || apiMsg.includes('found') || apiMsg.includes('invalid')) {
           showError("PRN Number not found. Please check and try again.", "prn");
       } else {
@@ -251,14 +302,17 @@ export default function LoginScreen({ navigation }) {
                       focusedInput === 'captcha' && styles.inputFocused,
                       errorInfo.type === 'captcha' && styles.inputError
                     ]} 
-                    placeholder="?" 
+                    placeholder="CODE" 
                     placeholderTextColor={COLORS.textLight}
                     value={userCaptcha} 
                     onChangeText={(text) => { setUserCaptcha(text); clearError(); }} 
                     onFocus={() => handleFocus('captcha')}
                     onBlur={() => setFocusedInput(null)}
-                    maxLength={1} 
+                    maxLength={5} 
                     autoCapitalize="characters" 
+                    autoCorrect={false}
+                    spellCheck={false}
+                    autoComplete="off"
                     returnKeyType="done" 
                     onSubmitEditing={handleLogin} 
                 />
@@ -275,12 +329,12 @@ export default function LoginScreen({ navigation }) {
 
             <TouchableOpacity 
                 onPress={handleLogin} 
-                disabled={loading || loginSuccess} 
+                disabled={loading || loginSuccess || lockoutTimer > 0} 
                 activeOpacity={0.8} 
                 style={[styles.loginBtnWrapper, { marginTop: errorInfo.message !== '' ? 5 : 15 }]}
             >
                 <LinearGradient 
-                    colors={loginSuccess ? [COLORS.success, '#2ecc71'] : GRADIENT_COLORS} 
+                    colors={lockoutTimer > 0 ? ['#95A5A6', '#7F8C8D'] : loginSuccess ? [COLORS.success, '#2ecc71'] : GRADIENT_COLORS} 
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={styles.gradientButton}
                 >
@@ -288,6 +342,11 @@ export default function LoginScreen({ navigation }) {
                       <>
                         <ActivityIndicator size="small" color={COLORS.white} />
                         <Text style={[styles.btnText, {marginLeft: 10}]}>Verifying...</Text>
+                      </>
+                  ) : lockoutTimer > 0 ? (
+                      <>
+                        <Ionicons name="lock-closed" size={20} color={COLORS.white} />
+                        <Text style={[styles.btnText, {marginLeft: 8}]}>Locked ({lockoutTimer}s)</Text>
                       </>
                   ) : loginSuccess ? (
                       <>
@@ -377,14 +436,14 @@ const styles = StyleSheet.create({
   
   captchaRow: { flexDirection: 'row', alignItems: 'center' },
   captchaBox: { 
-    width: 65, height: 55, 
+    width: 105, height: 50, 
     alignItems: 'center', justifyContent: 'center', 
     borderRadius: 12,
     elevation: 3, shadowColor: COLORS.primary, shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.2
   },
-  captchaText: { fontSize: 26, fontWeight: 'bold', color: COLORS.white },
-  refreshBtn: { padding: 10 },
-  captchaInput: { width: 65, height: 55, textAlign: 'center', fontSize: 22, fontWeight: 'bold', marginLeft: 10, padding: 0 },
+  captchaText: { fontSize: 18, fontWeight: 'bold', color: COLORS.white, letterSpacing: 3 },
+  refreshBtn: { padding: 8 },
+  captchaInput: { flex: 1, height: 50, textAlign: 'center', fontSize: 18, fontWeight: 'bold', marginLeft: 8, paddingHorizontal: 8, letterSpacing: 2 },
   
   // ✅ PROFESSIONAL ERROR BANNER STYLES
   errorBanner: {

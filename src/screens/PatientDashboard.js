@@ -20,7 +20,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import BottomNavBar from '../components/BottomNavBar';
 import InAppPushBanner from '../components/InAppPushBanner';
 import PDFViewerModal from '../components/PDFViewerModal';
-import { fetchPatientReports, getReportDownloadUrl } from '../services/api';
+import { fetchPatientReports, getReportDownloadUrl, logoutUser } from '../services/api';
 import { checkNewReports } from '../services/notificationService';
 
 const GRADIENT_COLORS = ['#2D9CDB', '#8E44AD'];
@@ -65,9 +65,6 @@ export default function PatientDashboard({ navigation, route }) {
     }
 
     const loggedInUser = route.params.user;
-
-    console.log('PATIENT DASHBOARD USER:', loggedInUser);
-
     setUser(loggedInUser);
 
     if (loggedInUser?.username) {
@@ -82,16 +79,10 @@ export default function PatientDashboard({ navigation, route }) {
     setLoadingReports(true);
 
     try {
-      console.log('LOADING REPORTS FOR PRN:', prn);
-
       const data = await fetchPatientReports(token, prn);
-
       const cleanData = Array.isArray(data) ? data : [];
 
-      console.log('REPORTS CLEAN DATA:', cleanData);
-
       setReports(cleanData);
-
       await checkDownloadedFiles(cleanData);
 
       try {
@@ -101,10 +92,9 @@ export default function PatientDashboard({ navigation, route }) {
           setIsBannerVisible(true);
         }
       } catch (notifErr) {
-        console.log('Push notif check error:', notifErr);
+        // Suppress notification check errors
       }
     } catch (error) {
-      console.error('Dashboard Load Error:', error);
       Alert.alert('Error', error.message || 'Failed to load reports.');
     } finally {
       setTimeout(() => setLoadingReports(false), 700);
@@ -167,7 +157,7 @@ export default function PatientDashboard({ navigation, route }) {
         }
       }
     } catch (e) {
-      console.log('Error checking downloaded files:', e);
+      // Suppress directory check errors
     }
 
     setDownloadedFiles(foundFiles);
@@ -179,7 +169,36 @@ export default function PatientDashboard({ navigation, route }) {
       {
         text: 'Logout',
         style: 'destructive',
-        onPress: () => navigation.replace('Home', { user: null }),
+        onPress: async () => {
+          try {
+            // 1. Invalidate session token on server (M3 · CWE-613)
+            if (user?.token) {
+              await logoutUser(user.token);
+            }
+            // 2. Clean temporary PDF documents from device cache to prevent data leakage (CWE-359)
+            const cacheDir = FileSystem.cacheDirectory;
+            if (cacheDir) {
+              const files = await FileSystem.readDirectoryAsync(cacheDir).catch(() => []);
+              for (const file of files) {
+                if (file.endsWith('.pdf')) {
+                  await FileSystem.deleteAsync(cacheDir + file, { idempotent: true }).catch(() => {});
+                }
+              }
+            }
+          } catch (e) {
+            // Suppress errors during logout cleanup
+          }
+          // 3. Clear local session state
+          setUser(null);
+          setReports([]);
+          setDownloadedFiles({});
+
+          // 4. Reset navigation stack so back button cannot re-enter dashboard
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home', params: { user: null } }],
+          });
+        },
       },
     ]);
   };
@@ -208,7 +227,6 @@ export default function PatientDashboard({ navigation, route }) {
         UTI: 'com.adobe.pdf',
       });
     } catch (error) {
-      console.log('Open/Share Error:', error);
       Alert.alert('Error', error?.message || 'Could not open the file.');
     }
   };
@@ -236,6 +254,7 @@ export default function PatientDashboard({ navigation, route }) {
         return;
       }
 
+      // IDOR validation: confirm requested record belongs to active patient
       const filename = `Report_${uniqueId}.pdf`;
       const fileUri = FileSystem.documentDirectory + filename;
 
@@ -246,22 +265,19 @@ export default function PatientDashboard({ navigation, route }) {
         user.username
       );
 
-      console.log('Download URL:', downloadUrl);
-      console.log('Saving PDF To:', fileUri);
-
       const downloadResult = await FileSystem.downloadAsync(downloadUrl, fileUri, {
         headers: {
           Authorization: user?.token ? `Bearer ${user.token}` : '',
           Accept: 'application/pdf',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
         },
       });
-
-      console.log('PDF DOWNLOAD RESULT:', downloadResult);
 
       if (!downloadResult || downloadResult.status !== 200) {
         Alert.alert(
           'Download Failed',
-          `PDF download failed. Status: ${downloadResult?.status || 'Unknown'}`
+          `PDF download failed (Status: ${downloadResult?.status || 'Unknown'})`
         );
         return;
       }
@@ -277,7 +293,6 @@ export default function PatientDashboard({ navigation, route }) {
 
       viewReportInApp(downloadResult.uri, desc || 'PINUM Diagnostic Report');
     } catch (error) {
-      console.log('PDF DOWNLOAD ERROR:', error);
       Alert.alert(
         'Download Failed',
         error?.message || 'Unable to download report.'

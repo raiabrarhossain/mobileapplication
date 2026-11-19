@@ -146,7 +146,7 @@ export default function AppointmentScreen({ navigation, route }) {
         setDepartments(mapped);
       }
     } catch (e) {
-      console.log('Failed to fetch departments for appointments:', e);
+      // Suppress department error in production
     } finally {
       setLoading(false);
     }

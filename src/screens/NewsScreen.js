@@ -74,12 +74,10 @@ export default function NewsScreen({ navigation, route }) {
         })
       );
     } catch (error) {
-      console.log('Back navigation error:', error);
-
       try {
         navigation.navigate('Home');
       } catch (e) {
-        console.log('Home navigation fallback failed:', e);
+        // Suppress fallback error
       }
     }
   };
@@ -89,10 +87,8 @@ export default function NewsScreen({ navigation, route }) {
 
     try {
       const data = await fetchNews();
-      console.log('News Loaded Successfully:', data);
       setNews(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error('News Fetch Error:', e);
       Alert.alert(t.errorTitle, t.errorMsg);
       setNews([]);
     } finally {
@@ -125,7 +121,6 @@ export default function NewsScreen({ navigation, route }) {
         return;
       }
 
-      console.log('Opening News Attachment via Linking:', url);
       const supported = await Linking.canOpenURL(url);
       if (supported) {
         await Linking.openURL(url);

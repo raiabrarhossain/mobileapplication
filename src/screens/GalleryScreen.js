@@ -104,7 +104,7 @@ export default function GalleryScreen({ navigation, route }) {
           setGalleryData(data);
         }
       } catch (error) {
-        console.log('Error loading gallery:', error);
+        // Suppress gallery load error
       }
     };
     loadGallery();

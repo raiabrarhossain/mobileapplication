@@ -2,31 +2,16 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 // ======================================================
-// PINUM API CONFIGURATION - DUAL-FALLBACK ARCHITECTURE
+// PINUM SECURE API CONFIGURATION
 // ======================================================
-// 1. LOCAL_PROXY: Android emulator/local bridge via host proxy (port 3000)
-// 2. LIVE_DIRECT: Direct production access to https://www.pinum.org.pk
-// Smart Dual-Fallback tries the fastest candidate and auto-switches if one fails or times out.
-
-const getLocalProxyBaseUrl = () => {
-  if (Platform.OS === 'web') return 'http://localhost:3000';
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:3000';
-  }
-  return 'http://localhost:3000';
-};
-
-const LOCAL_PROXY_ORIGIN = getLocalProxyBaseUrl();
+// Strictly Production HTTPS Architecture (CWE-319, CWE-489)
 const LIVE_DIRECT_ORIGIN = 'https://www.pinum.org.pk';
+const LIVE_DIRECT_API = 'https://www.pinum.org.pk/api';
 
-const BASE_URL = `${LOCAL_PROXY_ORIGIN}/api`;
+const BASE_URL = LIVE_DIRECT_API;
 const FILE_BASE_URL = LIVE_DIRECT_ORIGIN;
 
-const PUBLIC_HTTPS_TEST_API_URL = 'https://jsonplaceholder.typicode.com/todos/1';
-const NETWORK_TIMEOUT_MS = 6000;
-
-console.log('PINUM BASE_URL:', BASE_URL);
-console.log('PINUM FILE_BASE_URL:', FILE_BASE_URL);
+const NETWORK_TIMEOUT_MS = 8000;
 
 // ======================================================
 // HEADERS
@@ -67,8 +52,6 @@ const parseJsonSafely = (text, fallbackValue) => {
 
     return JSON.parse(text);
   } catch (error) {
-    console.log('JSON Parse Error:', error);
-    console.log('Raw Response:', text);
     return fallbackValue;
   }
 };
@@ -157,16 +140,14 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = NETWORK_TIMEOUT_M
 
 const getCandidateUrls = (targetUrl) => {
   const candidates = [targetUrl];
-  if (targetUrl.includes('10.0.2.2:3000') || targetUrl.includes('localhost:3000')) {
-    candidates.push(targetUrl.replace(/http:\/\/(10\.0\.2\.2|localhost):3000/g, LIVE_DIRECT_ORIGIN));
-  } else if (targetUrl.includes('www.pinum.org.pk') || targetUrl.includes('pinum.org.pk')) {
-    candidates.push(targetUrl.replace(/https?:\/\/(www\.)?pinum\.org\.pk/g, LOCAL_PROXY_ORIGIN));
+  if (targetUrl.includes('www.pinum.org.pk')) {
+    candidates.push(targetUrl.replace('www.pinum.org.pk', 'pinum.org.pk'));
   }
   return candidates;
 };
 
 // ======================================================
-// MAIN API REQUEST (SMART DUAL-FALLBACK)
+// MAIN API REQUEST (SECURE HTTPS ENDPOINTS)
 // ======================================================
 
 const apiRequest = async (url, options = {}, fallbackValue = null) => {
@@ -182,11 +163,8 @@ const apiRequest = async (url, options = {}, fallbackValue = null) => {
 
   for (let i = 0; i < candidates.length; i++) {
     const candidateUrl = candidates[i];
-    const startedAt = Date.now();
 
     try {
-      console.log(`[API Attempt ${i + 1}/${candidates.length}] ${method} ${candidateUrl}`);
-
       const response = await fetchWithTimeout(
         candidateUrl,
         {
@@ -196,9 +174,6 @@ const apiRequest = async (url, options = {}, fallbackValue = null) => {
         },
         NETWORK_TIMEOUT_MS
       );
-
-      const durationMs = Date.now() - startedAt;
-      console.log(`[API Response] Status: ${response.status} (${durationMs}ms) from ${candidateUrl}`);
 
       const responseText = await response.text();
       const data = parseJsonSafely(responseText, fallbackValue);
@@ -218,7 +193,6 @@ const apiRequest = async (url, options = {}, fallbackValue = null) => {
         }
 
         if (i < candidates.length - 1) {
-          console.warn(`[API] Server returned ${response.status}. Trying fallback candidate...`);
           continue;
         }
 
@@ -227,8 +201,6 @@ const apiRequest = async (url, options = {}, fallbackValue = null) => {
 
       return data;
     } catch (error) {
-      const durationMs = Date.now() - startedAt;
-      console.log(`[API Attempt ${i + 1} Failed] ${error?.message} (${durationMs}ms)`);
       lastError = error;
 
       const errorStr = (error?.message || '').toLowerCase();
@@ -241,10 +213,6 @@ const apiRequest = async (url, options = {}, fallbackValue = null) => {
 
       if (!isNetworkIssue) {
         throw error;
-      }
-
-      if (i < candidates.length - 1) {
-        console.warn(`[API] Retrying with candidate ${i + 2}...`);
       }
     }
   }
@@ -673,12 +641,6 @@ export const getReportDownloadUrl = (ptid, dept, testDesc, prn = null) => {
 export const downloadReportPDF = async (token, ptid, dept, testDesc, prn = null) => {
   const url = getReportDownloadUrl(ptid, dept, testDesc, prn);
 
-  console.log('PDF DIRECT DOWNLOAD URL:', url);
-  console.log('PDF PTID:', ptid);
-  console.log('PDF Department:', dept);
-  console.log('PDF TestDesc:', testDesc);
-  console.log('PDF PRN:', prn);
-
   const response = await fetchWithTimeout(
     url,
     {
@@ -694,17 +656,36 @@ export const downloadReportPDF = async (token, ptid, dept, testDesc, prn = null)
     NETWORK_TIMEOUT_MS
   );
 
-  console.log('PDF API STATUS:', response.status);
-  console.log('PDF CONTENT TYPE:', response.headers.get('content-type'));
-  console.log('PDF CONTENT LENGTH:', response.headers.get('content-length'));
-
   if (!response.ok) {
-    const errorText = await response.text();
-    console.log('PDF ERROR RESPONSE:', errorText);
-    throw new Error(`PDF Download Failed ${response.status}: ${errorText}`);
+    throw new Error(`PDF Download Failed (HTTP Status ${response.status})`);
   }
 
   return url;
+};
+
+// ======================================================
+// USER LOGOUT & SESSION TERMINATION (M3 · CWE-613)
+// ======================================================
+
+export const logoutUser = async (token) => {
+  try {
+    if (token) {
+      await fetchWithTimeout(
+        `${BASE_URL}/Auth/logout`,
+        {
+          method: 'POST',
+          headers: cleanHeaders({
+            ...defaultHeaders,
+            Authorization: `Bearer ${token}`,
+          }),
+        },
+        3000
+      ).catch(() => {});
+    }
+  } catch (e) {
+    // Suppress network logout errors on client
+  }
+  return true;
 };
 
 // ======================================================
@@ -724,7 +705,6 @@ export const fetchDepartments = async () => {
 
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.log('Departments Error:', error?.message || error);
     return [];
   }
 };
@@ -746,7 +726,6 @@ export const fetchExpertsByDepartment = async (departmentId) => {
 
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.log('Experts Error:', error?.message || error);
     return [];
   }
 };
@@ -772,7 +751,6 @@ export const fetchNews = async () => {
       .map((item, index) => normalizeNews(item, index))
       .filter((item) => item.isActive === true || item.isActive === 'true' || item.isActive === 1);
   } catch (error) {
-    console.log('News Error:', error?.message || error);
     return [];
   }
 };
@@ -794,7 +772,6 @@ export const fetchHospitalTimings = async () => {
 
     return normalizeTiming(data);
   } catch (error) {
-    console.log('Hospital Timing Error:', error?.message || error);
     return null;
   }
 };
@@ -816,160 +793,8 @@ export const fetchPopupNotification = async () => {
 
     return data;
   } catch (error) {
-    console.log('Popup Error:', error?.message || error);
     return null;
   }
-};
-
-// ======================================================
-// DIAGNOSTICS
-// ======================================================
-
-const diagnosticFetch = async (test) => {
-  const startedAt = Date.now();
-
-  try {
-    console.log('--------------------------------------------------');
-    console.log(`TEST START: ${test.name}`);
-    console.log(`TEST URL: ${test.url}`);
-
-    const response = await fetchWithTimeout(
-      test.url,
-      {
-        method: test.method || 'GET',
-        headers: cleanHeaders({
-          ...defaultHeaders,
-          Accept: test.accept || defaultHeaders.Accept,
-          ...(test.headers || {}),
-        }),
-      },
-      NETWORK_TIMEOUT_MS
-    );
-
-    const text = await response.text();
-    const durationMs = Date.now() - startedAt;
-
-    const result = {
-      name: test.name,
-      url: test.url,
-      success: response.ok,
-      status: response.status,
-      durationMs,
-      contentType: response.headers.get('content-type'),
-      contentLength: response.headers.get('content-length'),
-      server: response.headers.get('server'),
-      location: response.headers.get('location'),
-      responseStart: text.substring(0, 300),
-    };
-
-    console.log('TEST RESULT:', result);
-    return result;
-  } catch (error) {
-    const durationMs = Date.now() - startedAt;
-
-    const result = {
-      name: test.name,
-      url: test.url,
-      success: false,
-      status: null,
-      durationMs,
-      errorName: error?.name,
-      errorMessage: error?.message,
-    };
-
-    console.log('TEST FAILED RESULT:', result);
-    return result;
-  }
-};
-
-export const runPinumApiDiagnostics = async () => {
-  const tests = [
-    {
-      name: 'Public HTTPS Test',
-      url: PUBLIC_HTTPS_TEST_API_URL,
-      method: 'GET',
-    },
-    {
-      name: 'Active BASE_URL Lab Rates',
-      url: `${BASE_URL}/services/GetRates`,
-      method: 'GET',
-    },
-    {
-      name: 'PINUM Live Lab Rates',
-      url: 'https://pinum.org.pk/api/services/GetRates',
-      method: 'GET',
-    },
-    {
-      name: 'PINUM Live Departments',
-      url: 'https://pinum.org.pk/api/HospitalContent/departments',
-      method: 'GET',
-    },
-  ];
-
-  console.log('================ PINUM API DIAGNOSTICS START ================');
-  console.log('DIAGNOSTIC BASE_URL:', BASE_URL);
-  console.log('DIAGNOSTIC FILE_BASE_URL:', FILE_BASE_URL);
-
-  const results = [];
-
-  for (const test of tests) {
-    const result = await diagnosticFetch(test);
-    results.push(result);
-  }
-
-  console.log('================ PINUM API DIAGNOSTICS FINAL RESULTS ================');
-  console.log(JSON.stringify(results, null, 2));
-
-  return results;
-};
-
-export const testLiveConnection = async () => {
-  const urls = [
-    PUBLIC_HTTPS_TEST_API_URL,
-    `${FILE_BASE_URL}`,
-    `${BASE_URL}/services/GetRates`,
-    `${BASE_URL}/HospitalContent/news`,
-    `${BASE_URL}/HospitalContent/departments`,
-    'https://pinum.org.pk/api/services/GetRates',
-  ];
-
-  const results = [];
-
-  for (const url of urls) {
-    try {
-      const response = await fetchWithTimeout(
-        url,
-        {
-          method: 'GET',
-          headers: defaultHeaders,
-        },
-        NETWORK_TIMEOUT_MS
-      );
-
-      const text = await response.text();
-
-      results.push({
-        url,
-        success: response.ok,
-        status: response.status,
-        contentType: response.headers.get('content-type'),
-        location: response.headers.get('location'),
-        responseStart: text.substring(0, 200),
-      });
-    } catch (error) {
-      results.push({
-        url,
-        success: false,
-        status: null,
-        errorName: error?.name,
-        errorMessage: error?.message,
-      });
-    }
-  }
-
-  console.log('CONNECTION TEST FINAL RESULTS:', JSON.stringify(results, null, 2));
-
-  return results;
 };
 
 // ======================================================
@@ -999,7 +824,6 @@ export const fetchAppSlider = async () => {
       return item;
     });
   } catch (error) {
-    console.log('fetchAppSlider Error:', error?.message || error);
     return [];
   }
 };
@@ -1027,7 +851,6 @@ export const fetchAppGallery = async () => {
       return item;
     });
   } catch (error) {
-    console.log('fetchAppGallery Error:', error?.message || error);
     return [];
   }
 };
