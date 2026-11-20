@@ -4,26 +4,55 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
 
+import { SLIDE_1_BASE64, SLIDE_2_BASE64 } from '../assets/sliderAssets';
+
 const { width } = Dimensions.get('window');
 const SLIDER_WIDTH = width - 40;
+
+const PINUM_LOCAL_SLIDE_1 = { uri: SLIDE_1_BASE64 };
+const PINUM_LOCAL_SLIDE_2 = { uri: SLIDE_2_BASE64 };
 
 const DEFAULT_SLIDES = [
   {
     id: '1',
-    image: require('../img/pinumpic.jpg'),
+    image: PINUM_LOCAL_SLIDE_1,
     title: 'Excellence in Nuclear Medicine',
     desc: 'State-of-the-art facilities for comprehensive cancer care.'
   },
   {
     id: '2',
-    image: require('../img/ctSpect.gif'),
+    image: PINUM_LOCAL_SLIDE_2,
     title: 'Advanced PET/CT Scan',
     desc: 'Highly accurate diagnostic imaging available 24/7.'
   }
 ];
 
 function HeroImageSlider({ customSlides = null }) {
-  const slides = customSlides && customSlides.length > 0 ? customSlides : DEFAULT_SLIDES;
+  // Gracefully resolve image source with instant local fallback
+  const resolveSlideImage = (img) => {
+    if (!img) return PINUM_LOCAL_SLIDE_1;
+    if (typeof img === 'object' && img.uri) return img;
+    if (typeof img === 'string') {
+      const lower = img.toLowerCase();
+      if (lower.startsWith('data:image')) return { uri: img };
+      // If remote image is the known uncompressed heavy assets, substitute with instant compressed local assets
+      if (lower.includes('61f770ec') || lower.includes('ctspect') || lower.includes('pet/ct')) {
+        return PINUM_LOCAL_SLIDE_2;
+      }
+      if (lower.includes('de75f636') || lower.includes('pinumpic')) {
+        return PINUM_LOCAL_SLIDE_1;
+      }
+      return { uri: img };
+    }
+    return PINUM_LOCAL_SLIDE_1;
+  };
+
+  const rawSlides = customSlides && customSlides.length > 0 ? customSlides : DEFAULT_SLIDES;
+  const slides = rawSlides.map(s => ({
+    ...s,
+    resolvedImage: resolveSlideImage(s.image)
+  }));
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
 
@@ -50,14 +79,22 @@ function HeroImageSlider({ customSlides = null }) {
 
   const renderPictureSlide = ({ item }) => (
     <View style={styles.slideImageContainer}>
+      {/* Sleek Medical Gradient Underlay to completely prevent black screens */}
+      <LinearGradient
+        colors={['#1E293B', '#0F172A']}
+        style={StyleSheet.absoluteFillObject}
+      />
       <Image
-        source={typeof item.image === 'string' ? { uri: item.image } : item.image}
+        source={item.resolvedImage}
         style={StyleSheet.absoluteFillObject}
         contentFit="cover"
         transition={200}
         cachePolicy="memory-disk"
+        placeholder={PINUM_LOCAL_SLIDE_1}
+        placeholderContentFit="cover"
+        priority="high"
       />
-      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.slideOverlay}>
+      <LinearGradient colors={['transparent', 'rgba(15, 23, 42, 0.88)']} style={styles.slideOverlay}>
         <Text style={styles.slideTitle}>{item.title}</Text>
         <Text style={styles.slideDesc}>{item.desc}</Text>
       </LinearGradient>
@@ -72,9 +109,9 @@ function HeroImageSlider({ customSlides = null }) {
 
   return (
     <MotiView
-      from={{ opacity: 0, scale: 0.95 }}
+      from={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: 'timing', duration: 500 }}
+      transition={{ type: 'timing', duration: 400 }}
       style={styles.sliderContainer}
     >
       <FlatList
@@ -116,13 +153,19 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     marginBottom: 20,
-    backgroundColor: '#000000',
+    backgroundColor: '#1E293B', // Medical dark slate underlay instead of pitch black
+    elevation: 4,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   slideImageContainer: {
     width: SLIDER_WIDTH,
     height: 190,
     position: 'relative',
     justifyContent: 'flex-end',
+    backgroundColor: '#1E293B',
   },
   slideOverlay: {
     position: 'absolute',
@@ -130,18 +173,24 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    paddingTop: 40,
+    paddingTop: 36,
   },
   slideTitle: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   slideDesc: {
-    color: '#E0E0E0',
+    color: '#E2E8F0',
     fontSize: 12,
     lineHeight: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   pagination: {
     flexDirection: 'row',
@@ -156,11 +205,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 3,
   },
   activeDot: {
-    backgroundColor: '#FFFFFF',
-    width: 14,
+    backgroundColor: '#2D9CDB',
+    width: 16,
   },
   inactiveDot: {
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
   },
 });
 

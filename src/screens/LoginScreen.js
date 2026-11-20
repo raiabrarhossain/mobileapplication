@@ -54,14 +54,17 @@ export default function LoginScreen({ navigation }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const scrollViewRef = useRef(null);
+  const prnRef = useRef(null);
   const passwordRef = useRef(null);
   const captchaRef = useRef(null);
 
   const handleFocus = (inputType) => {
     setFocusedInput(inputType);
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 150);
+    if (inputType === 'captcha') {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ y: 180, animated: true });
+      }, 100);
+    }
   };
 
   useEffect(() => {
@@ -188,15 +191,16 @@ export default function LoginScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 30}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
       >
         <ScrollView
           ref={scrollViewRef}
           contentContainerStyle={{ flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="always"
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
 
           <ImageBackground
@@ -231,9 +235,14 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.brandName}>PINUM HOSPITAL</Text>
             <Text style={styles.welcomeText}>Sign in to view your medical reports</Text>
 
-            <View style={styles.inputContainer}>
+            <TouchableOpacity 
+              activeOpacity={1}
+              onPress={() => prnRef.current?.focus()}
+              style={styles.inputContainer}
+            >
               <Text style={styles.label}>PRN Number</Text>
               <TextInput
+                ref={prnRef}
                 style={[
                   styles.input,
                   focusedInput === 'prn' && styles.inputFocused,
@@ -250,7 +259,7 @@ export default function LoginScreen({ navigation }) {
                 blurOnSubmit={false}
                 onSubmitEditing={() => passwordRef.current?.focus()}
               />
-            </View>
+            </TouchableOpacity>
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Password</Text>

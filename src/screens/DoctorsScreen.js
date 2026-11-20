@@ -284,15 +284,41 @@ export default function DoctorsScreen({ navigation, route }) {
 
   const renderHeader = () => {
     const desc = route.params?.description || department?.description || department?.DepInfo || department?.depInfo || '';
-    if (!desc || String(desc).trim() === '' || String(desc).trim().toLowerCase() === 'department information') return null;
+    const hasDesc = desc && String(desc).trim() !== '' && String(desc).trim().toLowerCase() !== 'department information';
 
     return (
-      <View style={styles.departmentInfoCard}>
-        <View style={styles.infoTitleRow}>
-          <Ionicons name="information-circle-outline" size={20} color="#2D9CDB" style={{ marginRight: 8 }} />
-          <Text style={styles.infoTitle}>{t.deptOverview}</Text>
+      <View style={{ marginBottom: 12 }}>
+        {/* Prominent 'Developed by PINUM IT Team' Banner in Front */}
+        <View style={styles.itBannerCard}>
+          <LinearGradient
+            colors={['#FFFFFF', '#F0F9FF']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.itBannerGradient}
+          >
+            <View style={styles.itBannerIconBox}>
+              <Ionicons name="code-working" size={20} color="#2D9CDB" />
+            </View>
+            <View style={styles.itBannerTextBox}>
+              <Text style={styles.itBannerTitle}>PINUM Clinical Directory</Text>
+              <Text style={styles.itBannerSubtitle}>Developed by PINUM IT Team</Text>
+            </View>
+            <View style={styles.itVerifiedBadge}>
+              <Ionicons name="shield-checkmark" size={13} color="#10B981" />
+              <Text style={styles.itVerifiedText}>Official</Text>
+            </View>
+          </LinearGradient>
         </View>
-        <Text style={styles.infoText}>{desc}</Text>
+
+        {hasDesc ? (
+          <View style={styles.departmentInfoCard}>
+            <View style={styles.infoTitleRow}>
+              <Ionicons name="information-circle-outline" size={20} color="#2D9CDB" style={{ marginRight: 8 }} />
+              <Text style={styles.infoTitle}>{t.deptOverview}</Text>
+            </View>
+            <Text style={styles.infoText}>{desc}</Text>
+          </View>
+        ) : null}
       </View>
     );
   };
@@ -321,6 +347,12 @@ export default function DoctorsScreen({ navigation, route }) {
         </View>
 
         <Text style={styles.headerSubtitle}>{getDepartmentName()}</Text>
+
+        {/* Developed by PINUM IT Team - Front Header Pill */}
+        <View style={styles.itCreditPill}>
+          <Ionicons name="code-slash" size={13} color="#FFFFFF" style={{ marginRight: 6 }} />
+          <Text style={styles.itCreditPillText}>Developed by PINUM IT Team</Text>
+        </View>
       </LinearGradient>
 
       {loading ? (
@@ -335,6 +367,12 @@ export default function DoctorsScreen({ navigation, route }) {
           renderItem={renderDoctorItem}
           contentContainerStyle={styles.listPadding}
           ListHeaderComponent={renderHeader}
+          ListFooterComponent={
+            <View style={styles.itListFooter}>
+              <Ionicons name="shield-checkmark" size={15} color="#8E44AD" style={{ marginRight: 6 }} />
+              <Text style={styles.itListFooterText}>Developed by PINUM IT Team • PAEC Cancer Hospital</Text>
+            </View>
+          }
           initialNumToRender={8}
           maxToRenderPerBatch={10}
           windowSize={10}
@@ -561,5 +599,99 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#7F8C8D',
     lineHeight: 19
+  },
+
+  // Developed by PINUM IT Team Branding Elements
+  itCreditPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+  },
+  itCreditPillText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+
+  itBannerCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 14,
+    elevation: 3,
+    shadowColor: '#2D9CDB',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  itBannerGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: '#E0F2FE',
+    borderRadius: 16,
+  },
+  itBannerIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#EBF4FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  itBannerTextBox: {
+    flex: 1,
+  },
+  itBannerTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+  itBannerSubtitle: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#2D9CDB',
+    marginTop: 1,
+  },
+  itVerifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  itVerifiedText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#065F46',
+    marginLeft: 3,
+  },
+
+  itListFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  itListFooterText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
   },
 });

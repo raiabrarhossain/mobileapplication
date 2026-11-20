@@ -517,8 +517,92 @@ const normalizeTiming = (item) => {
 };
 
 // ======================================================
-// LAB RATES
+// LAB RATES & DEDUPLICATION
 // ======================================================
+
+export const deduplicateAndNormalizeRates = (ratesList) => {
+  if (!Array.isArray(ratesList)) return [];
+
+  const canonicalMap = new Map();
+
+  for (const item of ratesList) {
+    if (!item) continue;
+    let name = String(item.serviceName || item.ServiceName || item.name || '').trim().replace(/\s+/g, ' ');
+    if (!name) continue;
+
+    const upperClean = name.toUpperCase().replace(/\s*\/\s*/g, '/').replace(/\s*-\s*/g, '-');
+    let canonicalName = name;
+    let canonicalKey = upperClean;
+
+    if (upperClean === 'A/G RATIO' || upperClean === 'A / G RATIO') {
+      canonicalName = 'A/G Ratio';
+      canonicalKey = 'A/G_RATIO';
+    } else if (upperClean.startsWith('AMH')) {
+      canonicalName = 'AMH (Anti-Müllerian Hormone)';
+      canonicalKey = 'AMH';
+    } else if (upperClean === 'C PEPTIDE' || upperClean === 'C-PEPTIDE') {
+      canonicalName = 'C-Peptide';
+      canonicalKey = 'C_PEPTIDE';
+    } else if (upperClean.includes('FOLATE') && upperClean.includes('B')) {
+      canonicalName = 'Folate (Vitamin B-9)';
+      canonicalKey = 'FOLATE_B9';
+    } else if (upperClean.includes('HDL') && upperClean.includes('CHOLEST')) {
+      canonicalName = 'HDL-Cholesterol (Fasting)';
+      canonicalKey = 'HDL_CHOLESTEROL';
+    } else if (upperClean.includes('LDL') && upperClean.includes('CHOLEST')) {
+      canonicalName = 'LDL-Cholesterol (Fasting)';
+      canonicalKey = 'LDL_CHOLESTEROL';
+    } else if (upperClean === 'SERUM PROTEIN' || upperClean === 'SERUM  PROTEIN') {
+      canonicalName = 'Serum Protein';
+      canonicalKey = 'SERUM_PROTEIN';
+    } else if (upperClean.includes('SERUM') && upperClean.includes('CHOLEST')) {
+      canonicalName = 'Serum Cholesterol (Fasting)';
+      canonicalKey = 'SERUM_CHOLESTEROL';
+    } else if (upperClean.includes('SERUM') && (upperClean.includes('TRYGLY') || upperClean.includes('TRIGLY'))) {
+      canonicalName = 'Serum Triglycerides (Fasting)';
+      canonicalKey = 'SERUM_TRIGLYCERIDES';
+    } else if (upperClean.includes('VITAMIN B-12') || upperClean.includes('BITAMIN B-12') || upperClean.includes('COBALAMIN')) {
+      canonicalName = 'Vitamin B-12 (Cobalamin)';
+      canonicalKey = 'VITAMIN_B12';
+    } else if (upperClean === 'ANTI-HCV' || upperClean === 'ANTI-HCV SCREEN') {
+      canonicalName = 'Anti-HCV (Screening)';
+      canonicalKey = 'ANTI_HCV_SCREEN';
+    } else if (upperClean === 'BLOOD GLUCOSE (FASTING)' || upperClean === 'BLOOD GLUCOSE FASTING (FBS)') {
+      canonicalName = 'Blood Glucose Fasting (FBS)';
+      canonicalKey = 'BLOOD_GLUCOSE_FBS';
+    } else if (upperClean === 'BLOOD UREA' || upperClean === 'BLOOD UREA NITROGEN') {
+      canonicalName = 'Blood Urea Nitrogen (BUN)';
+      canonicalKey = 'BLOOD_UREA_NITROGEN';
+    } else if (upperClean === 'ANA' || upperClean === 'ANF' || upperClean === 'ANA/ANF') {
+      canonicalName = 'ANA / ANF (Antinuclear Antibodies)';
+      canonicalKey = 'ANA_ANF';
+    } else if (upperClean === 'HBSAG' || upperClean === 'HBSAG (ELISA)') {
+      canonicalName = 'HBsAg (Hepatitis B Surface Antigen)';
+      canonicalKey = 'HBSAG';
+    } else {
+      canonicalKey = upperClean.replace(/[^A-Z0-9]/g, '');
+    }
+
+    if (canonicalMap.has(canonicalKey)) {
+      const existing = canonicalMap.get(canonicalKey);
+      canonicalMap.set(canonicalKey, {
+        ...existing,
+        serviceName: canonicalName || existing.serviceName,
+        department: existing.department || item.department || '',
+        rate: existing.rate || item.rate || 0,
+        isAppointmentReq: existing.isAppointmentReq || item.isAppointmentReq || false,
+      });
+    } else {
+      canonicalMap.set(canonicalKey, {
+        ...item,
+        serviceName: canonicalName,
+        department: item.department ? String(item.department).trim() : '',
+      });
+    }
+  }
+
+  return Array.from(canonicalMap.values());
+};
 
 export const fetchLabRates = async () => {
   const data = await apiRequest(
@@ -531,7 +615,8 @@ export const fetchLabRates = async () => {
   );
 
   const arrayData = Array.isArray(data) ? data : [];
-  return arrayData.map((item, index) => normalizeRate(item, index));
+  const normalized = arrayData.map((item, index) => normalizeRate(item, index));
+  return deduplicateAndNormalizeRates(normalized);
 };
 
 // ======================================================

@@ -3,11 +3,12 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Print from 'expo-print';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Keyboard,
   Modal,
   Platform,
   ScrollView,
@@ -196,10 +197,115 @@ export default function LabRatesScreen({ navigation, route }) {
   // Add-on service toggles
   const [includeRegFee, setIncludeRegFee] = useState(true);
   const [includeHomeSampling, setIncludeHomeSampling] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  const searchInputRef = useRef(null);
 
   const lang = route.params?.language || 'en';
   const user = route.params?.user || null;
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+
+  // Track keyboard to gracefully adjust floating estimator bar
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setIsKeyboardVisible(true)
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setIsKeyboardVisible(false)
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  // Canonical Deduplication and Normalization Algorithm
+  const deduplicateAndNormalizeRates = useCallback((ratesList) => {
+    if (!Array.isArray(ratesList)) return [];
+
+    const canonicalMap = new Map();
+
+    for (const item of ratesList) {
+      if (!item) continue;
+      let name = String(item.serviceName || item.ServiceName || item.name || '').trim().replace(/\s+/g, ' ');
+      if (!name) continue;
+
+      const upperClean = name.toUpperCase().replace(/\s*\/\s*/g, '/').replace(/\s*-\s*/g, '-');
+      let canonicalName = name;
+      let canonicalKey = upperClean;
+
+      if (upperClean === 'A/G RATIO' || upperClean === 'A / G RATIO') {
+        canonicalName = 'A/G Ratio';
+        canonicalKey = 'A/G_RATIO';
+      } else if (upperClean.startsWith('AMH')) {
+        canonicalName = 'AMH (Anti-Müllerian Hormone)';
+        canonicalKey = 'AMH';
+      } else if (upperClean === 'C PEPTIDE' || upperClean === 'C-PEPTIDE') {
+        canonicalName = 'C-Peptide';
+        canonicalKey = 'C_PEPTIDE';
+      } else if (upperClean.includes('FOLATE') && upperClean.includes('B')) {
+        canonicalName = 'Folate (Vitamin B-9)';
+        canonicalKey = 'FOLATE_B9';
+      } else if (upperClean.includes('HDL') && upperClean.includes('CHOLEST')) {
+        canonicalName = 'HDL-Cholesterol (Fasting)';
+        canonicalKey = 'HDL_CHOLESTEROL';
+      } else if (upperClean.includes('LDL') && upperClean.includes('CHOLEST')) {
+        canonicalName = 'LDL-Cholesterol (Fasting)';
+        canonicalKey = 'LDL_CHOLESTEROL';
+      } else if (upperClean === 'SERUM PROTEIN' || upperClean === 'SERUM  PROTEIN') {
+        canonicalName = 'Serum Protein';
+        canonicalKey = 'SERUM_PROTEIN';
+      } else if (upperClean.includes('SERUM') && upperClean.includes('CHOLEST')) {
+        canonicalName = 'Serum Cholesterol (Fasting)';
+        canonicalKey = 'SERUM_CHOLESTEROL';
+      } else if (upperClean.includes('SERUM') && (upperClean.includes('TRYGLY') || upperClean.includes('TRIGLY'))) {
+        canonicalName = 'Serum Triglycerides (Fasting)';
+        canonicalKey = 'SERUM_TRIGLYCERIDES';
+      } else if (upperClean.includes('VITAMIN B-12') || upperClean.includes('BITAMIN B-12') || upperClean.includes('COBALAMIN')) {
+        canonicalName = 'Vitamin B-12 (Cobalamin)';
+        canonicalKey = 'VITAMIN_B12';
+      } else if (upperClean === 'ANTI-HCV' || upperClean === 'ANTI-HCV SCREEN') {
+        canonicalName = 'Anti-HCV (Screening)';
+        canonicalKey = 'ANTI_HCV_SCREEN';
+      } else if (upperClean === 'BLOOD GLUCOSE (FASTING)' || upperClean === 'BLOOD GLUCOSE FASTING (FBS)') {
+        canonicalName = 'Blood Glucose Fasting (FBS)';
+        canonicalKey = 'BLOOD_GLUCOSE_FBS';
+      } else if (upperClean === 'BLOOD UREA' || upperClean === 'BLOOD UREA NITROGEN') {
+        canonicalName = 'Blood Urea Nitrogen (BUN)';
+        canonicalKey = 'BLOOD_UREA_NITROGEN';
+      } else if (upperClean === 'ANA' || upperClean === 'ANF' || upperClean === 'ANA/ANF') {
+        canonicalName = 'ANA / ANF (Antinuclear Antibodies)';
+        canonicalKey = 'ANA_ANF';
+      } else if (upperClean === 'HBSAG' || upperClean === 'HBSAG (ELISA)') {
+        canonicalName = 'HBsAg (Hepatitis B Surface Antigen)';
+        canonicalKey = 'HBSAG';
+      } else {
+        canonicalKey = upperClean.replace(/[^A-Z0-9]/g, '');
+      }
+
+      if (canonicalMap.has(canonicalKey)) {
+        const existing = canonicalMap.get(canonicalKey);
+        canonicalMap.set(canonicalKey, {
+          ...existing,
+          serviceName: canonicalName || existing.serviceName,
+          department: existing.department || item.department || '',
+          rate: existing.rate || item.rate || 0,
+          isAppointmentReq: existing.isAppointmentReq || item.isAppointmentReq || false,
+        });
+      } else {
+        canonicalMap.set(canonicalKey, {
+          ...item,
+          serviceName: canonicalName,
+          department: item.department ? String(item.department).trim() : '',
+        });
+      }
+    }
+
+    return Array.from(canonicalMap.values());
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -210,7 +316,8 @@ export default function LabRatesScreen({ navigation, route }) {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchLabRates();
+      const rawData = await fetchLabRates();
+      const data = deduplicateAndNormalizeRates(rawData);
       setRates(data);
       setFilteredRates(data);
     } catch (_err) {
@@ -701,22 +808,28 @@ export default function LabRatesScreen({ navigation, route }) {
         </View>
 
         {/* Sleek Floating Search Bar */}
-        <View style={styles.searchContainer}>
+        <TouchableOpacity
+          activeOpacity={0.95}
+          onPress={() => searchInputRef.current?.focus()}
+          style={styles.searchContainer}
+        >
           <Ionicons name="search" size={20} color={COLORS.primary} style={styles.searchIcon} />
           <TextInput
+            ref={searchInputRef}
             style={styles.searchInput}
             placeholder={t.searchPlaceholder}
             value={searchQuery}
             onChangeText={handleSearch}
             placeholderTextColor={COLORS.textMuted}
             autoCorrect={false}
+            returnKeyType="search"
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => handleSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Ionicons name="close-circle" size={19} color={COLORS.textMuted} />
             </TouchableOpacity>
           )}
-        </View>
+        </TouchableOpacity>
       </LinearGradient>
 
       {/* Content Area */}
@@ -745,6 +858,8 @@ export default function LabRatesScreen({ navigation, route }) {
               { paddingBottom: hasAnySelection ? 165 : 95 }
             ]}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             initialNumToRender={12}
             maxToRenderPerBatch={12}
             windowSize={7}
@@ -771,7 +886,7 @@ export default function LabRatesScreen({ navigation, route }) {
       </View>
 
       {/* MODERN FLOATING RATE ESTIMATOR BAR */}
-      {hasAnySelection && (
+      {hasAnySelection && !isKeyboardVisible && (
         <View style={[styles.floatingBar, { bottom: 74 + (insets.bottom > 0 ? insets.bottom : 10) }]}>
           <View style={styles.floatingBarLeft}>
             <View style={styles.cartChipsRow}>
