@@ -8,7 +8,9 @@ import {
   FlatList,
   Dimensions,
   Modal,
-  StatusBar
+  StatusBar,
+  RefreshControl,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +20,8 @@ import { Image } from 'expo-image';
 
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = (width - 48) / 2;
+const URDU_FONT = 'JameelNooriNastaleeq';
+const isUrduText = (text) => /[\u0600-\u06FF]/.test(text || '');
 
 const GALLERY_IMAGES = [
   {
@@ -93,35 +97,49 @@ const TRANSLATIONS = {
 
 export default function GalleryScreen({ navigation, route }) {
   const [selectedImage, setSelectedImage] = useState(null);
-  const [galleryData, setGalleryData] = useState(GALLERY_IMAGES);
-
-  useEffect(() => {
-    let active = true;
-    const loadGallery = async () => {
-      try {
-        const data = await fetchAppGallery();
-        if (data && data.length > 0 && active) {
-          setGalleryData(data);
-        }
-      } catch (error) {
-        // Suppress gallery load error
-      }
-    };
-    loadGallery();
-    return () => { active = false; };
-  }, []);
+  const [galleryData, setGalleryData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const lang = route.params?.language || 'en';
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
 
+  const loadGallery = async (isPull = false) => {
+    if (isPull) setRefreshing(true);
+    else setIsLoading(true);
+    try {
+      const data = await fetchAppGallery();
+      if (Array.isArray(data) && data.length > 0) {
+        setGalleryData(data);
+      } else if (galleryData.length === 0) {
+        setGalleryData(GALLERY_IMAGES);
+      }
+    } catch (error) {
+      if (galleryData.length === 0) {
+        setGalleryData(GALLERY_IMAGES);
+      }
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadGallery();
+  }, []);
+
   const renderItem = ({ item, index }) => {
-    const cardTitle = t[`t${item.id}`] || item.title;
-    const cardDesc = t[`d${item.id}`] || item.desc;
+    // Prioritize actual backend API title & desc over hardcoded dictionary
+    const cardTitle = item.title || t[`t${item.id}`] || 'PINUM Hospital';
+    const cardDesc = item.desc || t[`d${item.id}`] || '';
+    const isUrduTitle = isUrduText(cardTitle);
+    const isUrduDesc = isUrduText(cardDesc);
+
     return (
       <MotiView
         from={{ opacity: 0, scale: 0.9, translateY: 20 }}
         animate={{ opacity: 1, scale: 1, translateY: 0 }}
-        transition={{ type: 'timing', duration: 450, delay: index * 100 }}
+        transition={{ type: 'timing', duration: 400, delay: index * 60 }}
         style={styles.cardContainer}
       >
         <TouchableOpacity
@@ -129,10 +147,35 @@ export default function GalleryScreen({ navigation, route }) {
           style={styles.card}
           onPress={() => setSelectedImage(item)}
         >
-          <Image source={{ uri: item.uri }} style={styles.image} contentFit="cover" />
+          <Image
+            source={{ uri: item.uri }}
+            style={styles.image}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            priority="high"
+            transition={200}
+          />
           <View style={styles.cardOverlay}>
-            <Text style={styles.cardTitle} numberOfLines={1}>{cardTitle}</Text>
-            <Text style={styles.cardDesc} numberOfLines={1}>{cardDesc}</Text>
+            <Text
+              style={[
+                styles.cardTitle,
+                isUrduTitle && { fontFamily: URDU_FONT, fontSize: 13, lineHeight: 22 }
+              ]}
+              numberOfLines={1}
+            >
+              {cardTitle}
+            </Text>
+            {cardDesc ? (
+              <Text
+                style={[
+                  styles.cardDesc,
+                  isUrduDesc && { fontFamily: URDU_FONT, fontSize: 11, lineHeight: 18 }
+                ]}
+                numberOfLines={1}
+              >
+                {cardDesc}
+              </Text>
+            ) : null}
           </View>
         </TouchableOpacity>
       </MotiView>
@@ -150,22 +193,44 @@ export default function GalleryScreen({ navigation, route }) {
         end={{ x: 1, y: 0 }}
         style={styles.header}
       >
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.8}>
           <Ionicons name="arrow-back" size={16} color="#FFFFFF" />
-          <Text style={styles.backBtnText}>Home</Text>
+          <Text style={styles.backBtnText}>{lang === 'ur' ? 'واپس' : 'Home'}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t.title}</Text>
-        <View style={{ width: 75 }} />
+        <Text style={[styles.headerTitle, lang === 'ur' && { fontFamily: URDU_FONT, fontSize: 22 }]}>
+          {t.title}
+        </Text>
+        <TouchableOpacity onPress={() => loadGallery(true)} style={styles.refreshBtn} activeOpacity={0.8}>
+          <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
       </LinearGradient>
 
       {/* Grid List */}
       <FlatList
         data={galleryData}
-        keyExtractor={item => item.id}
+        keyExtractor={(item, index) => String(item.id || index)}
         renderItem={renderItem}
         numColumns={2}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => loadGallery(true)}
+            colors={['#2D9CDB', '#8E44AD']}
+            tintColor="#2D9CDB"
+          />
+        }
+        ListEmptyComponent={
+          isLoading ? (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator size="large" color="#2D9CDB" />
+              <Text style={styles.loadingText}>
+                {lang === 'ur' ? 'گیلری لوڈ ہو رہی ہے...' : 'Loading Gallery...'}
+              </Text>
+            </View>
+          ) : null
+        }
       />
 
       {/* Full Screen Viewer Modal */}
@@ -190,10 +255,36 @@ export default function GalleryScreen({ navigation, route }) {
                 source={{ uri: selectedImage.uri }}
                 style={styles.fullImage}
                 contentFit="contain"
+                cachePolicy="memory-disk"
+                priority="high"
               />
               <View style={styles.infoBox}>
-                <Text style={styles.infoTitle}>{t[`t${selectedImage.id}`] || selectedImage.title}</Text>
-                <Text style={styles.infoDesc}>{t[`d${selectedImage.id}`] || selectedImage.desc}</Text>
+                <Text
+                  style={[
+                    styles.infoTitle,
+                    isUrduText(selectedImage.title || t[`t${selectedImage.id}`]) && {
+                      fontFamily: URDU_FONT,
+                      fontSize: 18,
+                      lineHeight: 28,
+                    },
+                  ]}
+                >
+                  {selectedImage.title || t[`t${selectedImage.id}`] || 'PINUM Hospital'}
+                </Text>
+                {(selectedImage.desc || t[`d${selectedImage.id}`]) ? (
+                  <Text
+                    style={[
+                      styles.infoDesc,
+                      isUrduText(selectedImage.desc || t[`d${selectedImage.id}`]) && {
+                        fontFamily: URDU_FONT,
+                        fontSize: 14,
+                        lineHeight: 22,
+                      },
+                    ]}
+                  >
+                    {selectedImage.desc || t[`d${selectedImage.id}`]}
+                  </Text>
+                ) : null}
               </View>
             </View>
           )}
@@ -242,6 +333,27 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     letterSpacing: 0.5
+  },
+  refreshBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)'
+  },
+  loadingBox: {
+    paddingTop: 60,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500'
   },
   listContent: {
     padding: 16,
