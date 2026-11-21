@@ -9,8 +9,10 @@ import {
   Alert,
   FlatList,
   Keyboard,
+  Linking,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -149,6 +151,7 @@ const CATEGORIES = [
   { id: 'NM', label: 'Nuclear Med', labelUr: 'نیوکلیئر میڈیسن', icon: 'nuclear' },
   { id: 'RAD', label: 'Radiology', labelUr: 'ریڈیالوجی', icon: 'scan-outline' },
   { id: 'ONC', label: 'Oncology', labelUr: 'آنکولوجی', icon: 'ribbon-outline' },
+  { id: 'HOME_SAMPLE', label: 'Home Sampling', labelUr: 'گھر سیمپلنگ', icon: 'home-outline' },
 ];
 
 const formatCurrency = (val) => {
@@ -198,6 +201,7 @@ export default function LabRatesScreen({ navigation, route }) {
   const [includeRegFee, setIncludeRegFee] = useState(true);
   const [includeHomeSampling, setIncludeHomeSampling] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const searchInputRef = useRef(null);
 
@@ -335,6 +339,9 @@ export default function LabRatesScreen({ navigation, route }) {
       result = result.filter((item) => {
         const d = String(item.department || '').trim().toUpperCase();
         const name = String(item.serviceName || '').toUpperCase();
+        if (cat === 'HOME_SAMPLE') {
+          return d.includes('PTH') || d.includes('PATH') || d.includes('RIA') || d.includes('PCR') || !item.isAppointmentReq;
+        }
         if (cat === 'PTH') return d.includes('PTH') || d.includes('PATH');
         if (cat === 'RIA') return d.includes('RIA') || d.includes('ELS') || name.includes('RIA');
         if (cat === 'PCR') return d.includes('PCR') || name.includes('PCR') || name.includes('GENE');
@@ -550,7 +557,7 @@ export default function LabRatesScreen({ navigation, route }) {
     }
   };
 
-  // Header Component for FlatList: Categories + Add-on Cards
+  // Header Component for FlatList: Categories + Dynamic Category Info
   const renderListHeader = () => (
     <View style={styles.listHeaderContainer}>
       {/* Category Filter Pills (Horizontal Scroll) */}
@@ -584,115 +591,64 @@ export default function LabRatesScreen({ navigation, route }) {
         </ScrollView>
       </View>
 
-      {/* Add-on Services Section */}
-      <View style={styles.addOnSection}>
-        <View style={styles.sectionHeaderRow}>
-          <View style={styles.sectionHeaderLeft}>
-            <View style={styles.sectionIconBadge}>
-              <MaterialCommunityIcons name="shield-plus-outline" size={16} color={COLORS.primary} />
+      {/* If Home Sampling category is explicitly selected, show full details card */}
+      {selectedCategory === 'HOME_SAMPLE' && (
+        <View style={styles.homeSampleSpecialCard}>
+          <View style={styles.homeSampleSpecialHeader}>
+            <View style={styles.homeSampleIconCircle}>
+              <MaterialCommunityIcons name="home-heart" size={26} color={COLORS.primary} />
             </View>
-            <View>
-              <Text style={styles.addOnSectionTitle}>{t.addOnsTitle}</Text>
-              <Text style={styles.addOnSectionSub}>{t.addOnsSub}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.homeSampleSpecialTitle}>
+                {lang === 'ur' ? 'گھر بیٹھے سیمپلنگ سروس' : 'Doorstep Home Lab Sampling'}
+              </Text>
+              <Text style={styles.homeSampleSpecialSub}>
+                {lang === 'ur' ? 'ماہر اور تربیت یافتہ عملہ آپ کے گھر آئے گا' : 'Certified phlebotomists visit your doorstep'}
+              </Text>
             </View>
+          </View>
+          <Text style={styles.homeSampleSpecialDesc}>
+            {t.samplingDesc}
+          </Text>
+          <View style={styles.homeSampleSpecialActions}>
+            <TouchableOpacity
+              style={styles.homeSampleCallBtn}
+              onPress={() => Linking.openURL('tel:03361634118')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="call" size={15} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Text style={styles.homeSampleCallText}>0336-1634118</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.homeSampleToggleBtn, includeHomeSampling && styles.homeSampleToggleBtnActive]}
+              onPress={toggleHomeSampling}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name={includeHomeSampling ? 'checkmark-circle' : 'add-circle-outline'}
+                size={16}
+                color={includeHomeSampling ? '#047857' : COLORS.primary}
+                style={{ marginRight: 5 }}
+              />
+              <Text style={[styles.homeSampleToggleText, includeHomeSampling && { color: '#047857' }]}>
+                {includeHomeSampling
+                  ? (lang === 'ur' ? 'سلپ میں شامل ہے (+500)' : 'Included in Slip (+Rs. 500)')
+                  : (lang === 'ur' ? 'سلپ میں شامل کریں (+500)' : 'Add to Slip (+Rs. 500)')}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        {/* Option 1: Doorstep Home Lab Sampling (+Rs. 500) */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={toggleHomeSampling}
-          style={[styles.addOnCard, includeHomeSampling && styles.addOnCardActiveBlue]}
-        >
-          <View style={styles.addOnMainRow}>
-            {/* Visual Icon Box */}
-            <View style={[styles.addOnIconBox, includeHomeSampling && styles.addOnIconBoxActiveBlue]}>
-              <MaterialCommunityIcons
-                name="home-heart"
-                size={22}
-                color={includeHomeSampling ? COLORS.white : COLORS.primary}
-              />
-            </View>
-
-            <View style={styles.addOnContent}>
-              <View style={styles.addOnBadgeRow}>
-                <Text style={styles.addOnTitle}>{t.homeSamplingLabel}</Text>
-                <View style={styles.specialBadge}>
-                  <Text style={styles.specialBadgeText}>{t.homeSamplingBadge}</Text>
-                </View>
-              </View>
-              <Text style={styles.addOnDesc}>{t.samplingDesc}</Text>
-            </View>
-
-            <View style={styles.addOnRightCol}>
-              <Text style={[styles.addOnPrice, includeHomeSampling && { color: COLORS.primary }]}>
-                +Rs. {HOME_SAMPLING_FEE}
-              </Text>
-              <View style={[styles.statusBadge, includeHomeSampling ? styles.statusBadgeActive : styles.statusBadgeInactive]}>
-                <Ionicons
-                  name={includeHomeSampling ? 'checkmark-circle' : 'add-circle-outline'}
-                  size={12}
-                  color={includeHomeSampling ? '#047857' : COLORS.textMuted}
-                  style={{ marginRight: 3 }}
-                />
-                <Text style={[styles.statusBadgeText, includeHomeSampling ? styles.statusTextActive : styles.statusTextInactive]}>
-                  {includeHomeSampling ? t.included : t.tapToAdd}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        {/* Option 2: Hospital Registration Fee (+Rs. 100) */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={toggleRegFee}
-          style={[styles.addOnCard, includeRegFee && styles.addOnCardActiveGreen]}
-        >
-          <View style={styles.addOnMainRow}>
-            {/* Visual Icon Box */}
-            <View style={[styles.addOnIconBox, includeRegFee && styles.addOnIconBoxActiveGreen]}>
-              <MaterialCommunityIcons
-                name="card-account-details-outline"
-                size={22}
-                color={includeRegFee ? COLORS.white : COLORS.success}
-              />
-            </View>
-
-            <View style={styles.addOnContent}>
-              <View style={styles.addOnBadgeRow}>
-                <Text style={styles.addOnTitle}>{t.regFeeLabel}</Text>
-                <View style={styles.optionalBadge}>
-                  <Text style={styles.optionalBadgeText}>{t.regBadge}</Text>
-                </View>
-              </View>
-              <Text style={styles.addOnDesc}>{t.regFeeDesc}</Text>
-            </View>
-
-            <View style={styles.addOnRightCol}>
-              <Text style={[styles.addOnPrice, includeRegFee && { color: COLORS.success }]}>
-                +Rs. {REGISTRATION_FEE}
-              </Text>
-              <View style={[styles.statusBadge, includeRegFee ? styles.statusBadgeGreenActive : styles.statusBadgeInactive]}>
-                <Ionicons
-                  name={includeRegFee ? 'checkmark-circle' : 'add-circle-outline'}
-                  size={12}
-                  color={includeRegFee ? '#047857' : COLORS.textMuted}
-                  style={{ marginRight: 3 }}
-                />
-                <Text style={[styles.statusBadgeText, includeRegFee ? styles.statusTextActive : styles.statusTextInactive]}>
-                  {includeRegFee ? t.included : t.tapToAdd}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </View>
+      )}
 
       {/* Directory Count Header */}
       <View style={styles.directoryHeader}>
         <Text style={styles.directoryTitle}>
-          {selectedCategory === 'ALL' ? (lang === 'ur' ? 'تمام دستیاب ٹیسٹ' : 'Available Lab Tests') : (lang === 'ur' ? 'فلٹر شدہ ٹیسٹ' : 'Filtered Diagnostic Tests')}
+          {selectedCategory === 'ALL'
+            ? (lang === 'ur' ? 'تمام دستیاب ٹیسٹ' : 'Available Lab Tests')
+            : selectedCategory === 'HOME_SAMPLE'
+            ? (lang === 'ur' ? 'گھر پر سیمپلنگ کے لیے ٹیسٹ منتخب کریں' : 'Select Tests for Home Sample Collection')
+            : (lang === 'ur' ? 'فلٹر شدہ ٹیسٹ' : 'Filtered Diagnostic Tests')}
         </Text>
         <Text style={styles.directoryCount}>
           {filteredRates.length} {t.itemCount}
@@ -808,12 +764,18 @@ export default function LabRatesScreen({ navigation, route }) {
         </View>
 
         {/* Sleek Floating Search Bar */}
-        <TouchableOpacity
-          activeOpacity={0.95}
-          onPress={() => searchInputRef.current?.focus()}
-          style={styles.searchContainer}
+        <View
+          style={[
+            styles.searchContainer,
+            isSearchFocused && styles.searchContainerFocused
+          ]}
         >
-          <Ionicons name="search" size={20} color={COLORS.primary} style={styles.searchIcon} />
+          <Ionicons
+            name="search"
+            size={20}
+            color={isSearchFocused ? COLORS.primary : COLORS.textMuted}
+            style={styles.searchIcon}
+          />
           <TextInput
             ref={searchInputRef}
             style={styles.searchInput}
@@ -823,13 +785,24 @@ export default function LabRatesScreen({ navigation, route }) {
             placeholderTextColor={COLORS.textMuted}
             autoCorrect={false}
             returnKeyType="search"
+            showSoftInputOnFocus={true}
+            focusable={true}
+            importantForAutofill="no"
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => handleSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity
+              onPress={() => {
+                handleSearch('');
+                searchInputRef.current?.focus();
+              }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Ionicons name="close-circle" size={19} color={COLORS.textMuted} />
             </TouchableOpacity>
           )}
-        </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       {/* Content Area */}
@@ -855,7 +828,7 @@ export default function LabRatesScreen({ navigation, route }) {
             renderItem={renderItem}
             contentContainerStyle={[
               styles.listContainer,
-              { paddingBottom: hasAnySelection ? 165 : 95 }
+              { paddingBottom: selectedTests.length > 0 ? 210 : 85 }
             ]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
@@ -863,7 +836,7 @@ export default function LabRatesScreen({ navigation, route }) {
             initialNumToRender={12}
             maxToRenderPerBatch={12}
             windowSize={7}
-            removeClippedSubviews={Platform.OS === 'android'}
+            removeClippedSubviews={false}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Ionicons name="flask-outline" size={54} color="#CBD5E1" />
@@ -885,47 +858,101 @@ export default function LabRatesScreen({ navigation, route }) {
         )}
       </View>
 
-      {/* MODERN FLOATING RATE ESTIMATOR BAR */}
-      {hasAnySelection && !isKeyboardVisible && (
-        <View style={[styles.floatingBar, { bottom: 74 + (insets.bottom > 0 ? insets.bottom : 10) }]}>
-          <View style={styles.floatingBarLeft}>
-            <View style={styles.cartChipsRow}>
-              <View style={styles.cartCountBadge}>
-                <Text style={styles.cartCountText}>
+      {/* INTERACTIVE FLOATING ESTIMATOR WITH SELECTION & ADD-ONS */}
+      {selectedTests.length > 0 && !isKeyboardVisible && (
+        <View style={[styles.floatingEstimatorCard, { bottom: 58 + (insets.bottom > 0 ? insets.bottom : 6) }]}>
+          {/* Top Row: Selected Tests Count & Clear */}
+          <View style={styles.floatingTopRow}>
+            <View style={styles.floatingTitleWrap}>
+              <View style={styles.selectedCountBadge}>
+                <Ionicons name="flask" size={12} color="#FFFFFF" style={{ marginRight: 4 }} />
+                <Text style={styles.selectedCountText}>
                   {selectedTests.length} {t.selectedTests}
                 </Text>
               </View>
-              {includeHomeSampling && (
-                <View style={styles.cartChipBlue}>
-                  <Text style={styles.cartChipBlueText}>+Home Sample</Text>
-                </View>
-              )}
-              {includeRegFee && (
-                <View style={styles.cartChipGreen}>
-                  <Text style={styles.cartChipGreenText}>+Reg</Text>
-                </View>
-              )}
+              <Text style={styles.floatingSubtotalLabel}>
+                {t.subtotal} <Text style={styles.floatingSubtotalValue}>Rs. {formatCurrency(subTotal)}</Text>
+              </Text>
             </View>
-            <Text style={styles.floatingBarTotal}>
-              {t.total}: <Text style={styles.grandTotalHighlight}>Rs. {formatCurrency(grandTotal)}</Text>
-            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                try {
+                  Haptics.impactAsync?.(Haptics.ImpactFeedbackStyle.Light);
+                } catch (_e) {}
+                setSelectedTests([]);
+              }}
+              style={styles.clearBtnCompact}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="trash-outline" size={13} color="#EF4444" style={{ marginRight: 3 }} />
+              <Text style={styles.clearTextCompact}>{t.clearAll}</Text>
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles.viewSlipBtn}
-            onPress={() => setShowSlip(true)}
-            activeOpacity={0.88}
-          >
-            <LinearGradient
-              colors={CARD_GRADIENT}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.viewSlipGradient}
+          {/* Add-on Checkbox Box (Registration & Home Sampling) */}
+          <View style={styles.addOnCheckboxBox}>
+            {/* Checkbox 1: Hospital Registration Fee */}
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={toggleRegFee}
+              style={[styles.checkboxItemRow, includeRegFee && styles.checkboxItemRowActiveGreen]}
             >
-              <Text style={styles.viewSlipText}>{t.viewSlip}</Text>
-              <Ionicons name="receipt-outline" size={17} color={COLORS.white} style={{ marginLeft: 6 }} />
-            </LinearGradient>
-          </TouchableOpacity>
+              <View style={[styles.customCheckbox, includeRegFee && styles.customCheckboxActiveGreen]}>
+                {includeRegFee && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+              </View>
+              <View style={styles.checkboxTextWrap}>
+                <Text style={[styles.checkboxTitleText, includeRegFee && { color: '#047857', fontWeight: '700' }]}>
+                  {lang === 'ur' ? 'ہسپتال رجسٹریشن (پہلی وزٹ)' : 'Hospital Registration (1st Visit)'}
+                </Text>
+              </View>
+              <Text style={[styles.checkboxPriceText, includeRegFee && { color: '#047857' }]}>
+                +Rs. {REGISTRATION_FEE}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Checkbox 2: Doorstep Home Sampling */}
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={toggleHomeSampling}
+              style={[styles.checkboxItemRow, includeHomeSampling && styles.checkboxItemRowActiveBlue]}
+            >
+              <View style={[styles.customCheckbox, includeHomeSampling && styles.customCheckboxActiveBlue]}>
+                {includeHomeSampling && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+              </View>
+              <View style={styles.checkboxTextWrap}>
+                <Text style={[styles.checkboxTitleText, includeHomeSampling && { color: COLORS.primary, fontWeight: '700' }]}>
+                  {lang === 'ur' ? 'گھر بیٹھے سیمپلنگ سروس' : 'Doorstep Home Sampling'}
+                </Text>
+              </View>
+              <Text style={[styles.checkboxPriceText, includeHomeSampling && { color: COLORS.primary }]}>
+                +Rs. {HOME_SAMPLING_FEE}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Bottom Action Row: Grand Total & View Slip */}
+          <View style={styles.floatingActionRow}>
+            <View style={styles.grandTotalCol}>
+              <Text style={styles.grandTotalMiniLabel}>{t.grandTotal}</Text>
+              <Text style={styles.grandTotalMainValue}>Rs. {formatCurrency(grandTotal)}</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.viewSlipBtn}
+              onPress={() => setShowSlip(true)}
+              activeOpacity={0.88}
+            >
+              <LinearGradient
+                colors={CARD_GRADIENT}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.viewSlipGradient}
+              >
+                <Text style={styles.viewSlipText}>{t.viewSlip}</Text>
+                <Ionicons name="receipt-outline" size={15} color={COLORS.white} style={{ marginLeft: 5 }} />
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -1158,17 +1185,27 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: 15,
     paddingHorizontal: 14,
-    height: 48,
+    height: 50,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  searchContainerFocused: {
+    borderColor: COLORS.primary,
+    elevation: 6,
+    shadowColor: COLORS.primary,
+    shadowOpacity: 0.25,
   },
   searchIcon: { marginRight: 10 },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    height: '100%',
+    paddingVertical: 0,
+    fontSize: 14.5,
     color: COLORS.text,
     fontWeight: '500',
   },
@@ -1581,80 +1618,155 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Floating Rate Estimator Bar
-  floatingBar: {
+  // Floating Rate Estimator Card with Add-on Checkboxes
+  floatingEstimatorCard: {
     position: 'absolute',
-    left: 14,
-    right: 14,
-    backgroundColor: COLORS.darkCard,
+    left: 12,
+    right: 12,
+    backgroundColor: '#0F172A',
     borderRadius: 18,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingHorizontal: 14,
     elevation: 20,
     zIndex: 99,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
-  floatingBarLeft: {
-    flex: 1,
+  floatingTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 7,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    paddingBottom: 6,
   },
-  cartChipsRow: {
+  floatingTitleWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 4,
-    marginBottom: 2,
+    gap: 6,
   },
-  cartCountBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+  selectedCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  selectedCountText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  floatingSubtotalLabel: {
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  floatingSubtotalValue: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+  clearBtnCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 6,
   },
-  cartCountText: {
-    color: '#E2E8F0',
-    fontSize: 10,
+  clearTextCompact: {
+    color: '#EF4444',
+    fontSize: 10.5,
     fontWeight: '700',
   },
-  cartChipBlue: {
-    backgroundColor: 'rgba(45, 156, 219, 0.25)',
-    paddingVertical: 2,
-    paddingHorizontal: 5,
-    borderRadius: 5,
+
+  // Add-on Checkbox Box
+  addOnCheckboxBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 12,
+    padding: 5,
+    gap: 4,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  cartChipBlueText: {
-    color: '#93C5FD',
-    fontSize: 9,
-    fontWeight: '800',
+  checkboxItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
   },
-  cartChipGreen: {
-    backgroundColor: 'rgba(16, 185, 129, 0.25)',
-    paddingVertical: 2,
-    paddingHorizontal: 5,
-    borderRadius: 5,
+  checkboxItemRowActiveGreen: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
   },
-  cartChipGreenText: {
-    color: '#86EFAC',
-    fontSize: 9,
-    fontWeight: '800',
+  checkboxItemRowActiveBlue: {
+    backgroundColor: 'rgba(45, 156, 219, 0.15)',
   },
-  floatingBarTotal: {
-    color: '#94A3B8',
-    fontSize: 12.5,
+  customCheckbox: {
+    width: 17,
+    height: 17,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    backgroundColor: 'transparent',
+  },
+  customCheckboxActiveGreen: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+  },
+  customCheckboxActiveBlue: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  checkboxTextWrap: {
+    flex: 1,
+  },
+  checkboxTitleText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 11,
     fontWeight: '600',
-    marginTop: 2,
   },
-  grandTotalHighlight: {
+  checkboxPriceText: {
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontSize: 11.5,
+    fontWeight: '700',
+    marginLeft: 6,
+  },
+
+  // Floating Action Row
+  floatingActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  grandTotalCol: {
+    flex: 1,
+  },
+  grandTotalMiniLabel: {
+    color: 'rgba(255, 255, 255, 0.65)',
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  grandTotalMainValue: {
     color: '#34D399',
-    fontSize: 16.5,
+    fontSize: 17,
     fontWeight: '900',
+    letterSpacing: 0.3,
   },
   viewSlipBtn: {
     borderRadius: 12,
@@ -1664,13 +1776,96 @@ const styles = StyleSheet.create({
   viewSlipGradient: {
     flexDirection: 'row',
     paddingVertical: 9,
-    paddingHorizontal: 14,
+    paddingHorizontal: 15,
     alignItems: 'center',
   },
   viewSlipText: {
     color: COLORS.white,
     fontWeight: '800',
     fontSize: 12.5,
+  },
+
+  // Home Sampling Special Card (when Home Sampling category is tapped)
+  homeSampleSpecialCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: '#BAE6FD',
+    elevation: 3,
+    shadowColor: COLORS.primary,
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  homeSampleSpecialHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  homeSampleIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#E0F2FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  homeSampleSpecialTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  homeSampleSpecialSub: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    marginTop: 1,
+  },
+  homeSampleSpecialDesc: {
+    fontSize: 11.5,
+    color: COLORS.textSecondary,
+    lineHeight: 17,
+    marginBottom: 12,
+  },
+  homeSampleSpecialActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  homeSampleCallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0288D1',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  homeSampleCallText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  homeSampleToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F9FF',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  homeSampleToggleBtnActive: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+  },
+  homeSampleToggleText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
 
   // Modal Rate Slip

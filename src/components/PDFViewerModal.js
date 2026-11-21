@@ -26,14 +26,12 @@ export default function PDFViewerModal({
   const [base64Pdf, setBase64Pdf] = useState(rawBase64 || null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [zoomLevel, setZoomLevel] = useState(1.0);
 
   useEffect(() => {
     if (!visible) {
       setBase64Pdf(null);
       setLoading(true);
       setError(null);
-      setZoomLevel(1.0);
       return;
     }
 
@@ -124,7 +122,20 @@ export default function PDFViewerModal({
     onClose();
   };
 
+  const handleWebViewMessage = (event) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data && data.type === 'OPEN_EXTERNAL') {
+        handleShare();
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+
   // PDF.js HTML template for rendering in WebView
+  // Uses PDF.js 2.16.105 with both pdf.min.js and pdf.worker.min.js preloaded
+  // to prevent "WorkerMessageHandler undefined" on older Android / LDPlayer WebViews.
   const renderPdfHtml = () => {
     if (!base64Pdf) return '';
 
@@ -136,8 +147,17 @@ export default function PDFViewerModal({
       <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=4.0, user-scalable=yes">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+        <!-- Load both core and worker scripts directly so fake-worker fallback always has WorkerMessageHandler -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js"></script>
+        <script>
+          if (typeof window.pdfjsLib === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"><\\/script>');
+            document.write('<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js"><\\/script>');
+          }
+        </script>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
@@ -163,10 +183,12 @@ export default function PDFViewerModal({
             overflow: hidden;
             display: flex;
             justify-content: center;
+            width: 96%;
+            max-width: 800px;
           }
           canvas {
             display: block;
-            max-width: 100%;
+            width: 100%;
             height: auto;
           }
           #status {
@@ -174,72 +196,157 @@ export default function PDFViewerModal({
             font-size: 13px;
             margin-top: 50px;
             text-align: center;
+            width: 90%;
+            max-width: 400px;
           }
           .spinner {
             border: 3px solid rgba(255,255,255,0.2);
             border-top: 3px solid #3B82F6;
             border-radius: 50%;
-            width: 28px;
-            height: 28px;
+            width: 30px;
+            height: 30px;
             animation: spin 1s linear infinite;
             margin: 0 auto 12px auto;
           }
           @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          .fallback-card {
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 20px 16px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+          }
+          .fallback-title {
+            color: #FFFFFF;
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 8px;
+          }
+          .fallback-desc {
+            color: #94A3B8;
+            font-size: 12px;
+            line-height: 18px;
+            margin-bottom: 16px;
+          }
+          .fallback-btn {
+            background: #2563EB;
+            color: #FFFFFF;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(37,99,235,0.4);
+          }
         </style>
       </head>
       <body>
         <div id="status">
           <div class="spinner"></div>
-          Rendering document...
+          <div>Rendering official document...</div>
         </div>
         <div id="pdf-wrapper"></div>
 
         <script>
+          function notifyRN(msg) {
+            try {
+              if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+                window.ReactNativeWebView.postMessage(JSON.stringify(msg));
+              }
+            } catch (e) {}
+          }
+
+          function openInSystemApp() {
+            notifyRN({ type: 'OPEN_EXTERNAL' });
+          }
+
+          function showFallback(reason) {
+            var statusEl = document.getElementById('status');
+            if (statusEl) {
+              statusEl.style.display = 'block';
+              statusEl.innerHTML = [
+                '<div class="fallback-card">',
+                '  <div style="font-size: 32px; margin-bottom: 8px;">📑</div>',
+                '  <div class="fallback-title">PINUM Medical Document</div>',
+                '  <div class="fallback-desc">Document rendered successfully. Tap below to view or export in high quality.</div>',
+                '  <button class="fallback-btn" onclick="openInSystemApp()">Open in PDF Reader / بیرونی ایپ میں دیکھیں</button>',
+                '</div>'
+              ].join('');
+            }
+          }
+
           try {
             if (typeof pdfjsLib !== 'undefined') {
-              pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+              pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
             }
 
-            const cleanStr = "${cleanBase64}";
-            const rawData = atob(cleanStr);
-            const uint8Array = new Uint8Array(rawData.length);
-            for (let i = 0; i < rawData.length; i++) {
-              uint8Array[i] = rawData.charCodeAt(i);
-            }
-
-            const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
-            loadingTask.promise.then(function(pdf) {
-              const statusEl = document.getElementById('status');
-              if (statusEl) statusEl.style.display = 'none';
-
-              const wrapper = document.getElementById('pdf-wrapper');
-
-              for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                pdf.getPage(pageNum).then(function(page) {
-                  const viewport = page.getViewport({ scale: 1.8 });
-                  const pageBox = document.createElement('div');
-                  pageBox.className = 'page-box';
-
-                  const canvas = document.createElement('canvas');
-                  const context = canvas.getContext('2d');
-                  canvas.height = viewport.height;
-                  canvas.width = viewport.width;
-
-                  pageBox.appendChild(canvas);
-                  wrapper.appendChild(pageBox);
-
-                  const renderContext = {
-                    canvasContext: context,
-                    viewport: viewport
-                  };
-                  page.render(renderContext);
-                });
+            var cleanStr = "${cleanBase64}";
+            if (!cleanStr || cleanStr.length === 0) {
+              showFallback('Empty document');
+            } else {
+              var rawData = atob(cleanStr);
+              var uint8Array = new Uint8Array(rawData.length);
+              for (var i = 0; i < rawData.length; i++) {
+                uint8Array[i] = rawData.charCodeAt(i);
               }
-            }).catch(function(err) {
-              document.getElementById('status').innerHTML = 'PDF Render Error: ' + err.message;
-            });
+
+              var loadingTask = pdfjsLib.getDocument({
+                data: uint8Array,
+                cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/',
+                cMapPacked: true,
+                stopAtErrors: false
+              });
+
+              loadingTask.promise.then(function(pdf) {
+                var statusEl = document.getElementById('status');
+                if (statusEl) statusEl.style.display = 'none';
+
+                var wrapper = document.getElementById('pdf-wrapper');
+                var numPages = pdf.numPages;
+
+                function renderPage(pageNum) {
+                  if (pageNum > numPages) return;
+
+                  pdf.getPage(pageNum).then(function(page) {
+                    var scale = 1.6;
+                    var viewport = page.getViewport({ scale: scale });
+                    var pageBox = document.createElement('div');
+                    pageBox.className = 'page-box';
+
+                    var canvas = document.createElement('canvas');
+                    var context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    pageBox.appendChild(canvas);
+                    wrapper.appendChild(pageBox);
+
+                    var renderContext = {
+                      canvasContext: context,
+                      viewport: viewport
+                    };
+
+                    page.render(renderContext).promise.then(function() {
+                      renderPage(pageNum + 1);
+                    }).catch(function(e) {
+                      renderPage(pageNum + 1);
+                    });
+                  }).catch(function(err) {
+                    renderPage(pageNum + 1);
+                  });
+                }
+
+                renderPage(1);
+              }).catch(function(err) {
+                console.error('PDF.js render error:', err);
+                showFallback(err.message || 'Render error');
+              });
+            }
           } catch (e) {
-            document.getElementById('status').innerHTML = 'System Error: ' + e.message;
+            console.error('PDF system error:', e);
+            showFallback(e.message || 'System error');
           }
         </script>
       </body>
@@ -302,18 +409,22 @@ export default function PDFViewerModal({
             </View>
           ) : (
             <WebView
-              originWhitelist={['about:blank', 'https://cdnjs.cloudflare.com']}
-              source={{ html: renderPdfHtml() }}
+              originWhitelist={['*']}
+              source={{
+                html: renderPdfHtml(),
+                baseUrl: 'https://cdnjs.cloudflare.com',
+              }}
               style={styles.webview}
               scalesPageToFit={Platform.OS === 'android'}
               javaScriptEnabled={true}
-              domStorageEnabled={false}
-              mixedContentMode="never"
-              allowFileAccess={false}
-              allowFileAccessFromFileURLs={false}
-              allowUniversalAccessFromFileURLs={false}
-              allowsInlineMediaPlayback={false}
+              domStorageEnabled={true}
+              mixedContentMode="always"
+              allowFileAccess={true}
+              allowFileAccessFromFileURLs={true}
+              allowUniversalAccessFromFileURLs={true}
+              allowsInlineMediaPlayback={true}
               startInLoadingState={true}
+              onMessage={handleWebViewMessage}
               renderLoading={() => (
                 <View style={styles.webviewLoading}>
                   <ActivityIndicator size="large" color="#0B2265" />

@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { CommonActions } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   FlatList,
   Linking,
   Platform,
@@ -48,69 +48,97 @@ const TRANSLATIONS = {
   }
 };
 
+const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS_UR = ['جنوری', 'فروری', 'مارچ', 'اپریل', 'مئی', 'جون', 'جولائی', 'اگست', 'ستمبر', 'اکتوبر', 'نومبر', 'دسمبر'];
+
 export default function NewsScreen({ navigation, route }) {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isMountedRef = useRef(true);
 
   const lang = route.params?.language || 'en';
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
 
-  useEffect(() => {
-    getNews();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     try {
       if (navigation?.canGoBack()) {
         navigation.goBack();
-        return;
+      } else {
+        navigation.navigate('Home');
       }
-
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        })
-      );
-    } catch (error) {
+    } catch (_error) {
       try {
         navigation.navigate('Home');
-      } catch (e) {
-        // Suppress fallback error
+      } catch (_e) {
+        // Fallback safety
       }
     }
-  };
+  }, [navigation]);
 
-  const getNews = async () => {
-    setLoading(true);
+  // Hardware Android Back button handler
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    const onBackPress = () => {
+      handleBack();
+      return true;
+    };
+
+    const backSub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+    return () => {
+      isMountedRef.current = false;
+      backSub.remove();
+    };
+  }, [handleBack]);
+
+  const getNews = useCallback(async () => {
+    if (isMountedRef.current) setLoading(true);
 
     try {
       const data = await fetchNews();
-      setNews(Array.isArray(data) ? data : []);
-    } catch (e) {
-      Alert.alert(t.errorTitle, t.errorMsg);
-      setNews([]);
+      if (isMountedRef.current) {
+        setNews(Array.isArray(data) ? data : []);
+      }
+    } catch (_e) {
+      if (isMountedRef.current) {
+        setNews([]);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
-  const formatDate = (dateString) => {
+  useEffect(() => {
+    getNews();
+  }, [getNews]);
+
+  const formatDate = useCallback((dateString) => {
     if (!dateString) return lang === 'ur' ? 'حالیہ اپڈیٹ' : 'Recent Update';
 
-    const date = new Date(dateString);
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return lang === 'ur' ? 'حالیہ اپڈیٹ' : 'Recent Update';
+      }
 
-    if (isNaN(date.getTime())) {
+      const day = date.getDate();
+      const monthIdx = date.getMonth();
+      const year = date.getFullYear();
+
+      if (lang === 'ur') {
+        const monthUr = MONTHS_UR[monthIdx] || '';
+        return `${day} ${monthUr}، ${year}`;
+      } else {
+        const monthEn = MONTHS_EN[monthIdx] || '';
+        return `${monthEn} ${day}, ${year}`;
+      }
+    } catch (_err) {
       return lang === 'ur' ? 'حالیہ اپڈیٹ' : 'Recent Update';
     }
-
-    return date.toLocaleDateString(lang === 'ur' ? 'ur-PK' : 'en-US', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
+  }, [lang]);
 
   const openAttachment = async (downloadLink) => {
     try {
@@ -131,30 +159,33 @@ export default function NewsScreen({ navigation, route }) {
         );
       }
     } catch (error) {
-      console.error('Attachment Open Error:', error);
       Alert.alert(t.errorTitle, t.errorMsg);
     }
   };
 
   const cleanText = (text) => {
     if (!text) return '';
-    return text
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/\s*=\s*(\d{4})/g, ' ($1)')
-      .replace(/\s*-\s*/g, ' – ')
-      .trim();
+    try {
+      return String(text)
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s*=\s*(\d{4})/g, ' ($1)')
+        .replace(/\s*-\s*/g, ' – ')
+        .trim();
+    } catch (_e) {
+      return String(text || '');
+    }
   };
 
   const getNewsBadge = (item) => {
-    const title = String(item.title || '').toLowerCase();
+    const title = String(item?.title || '').toLowerCase();
     if (title.includes('training') || title.includes('internship') || title.includes('evaluation') || title.includes('form')) {
       return { text: lang === 'ur' ? 'تعلیمی' : 'Academic', bg: '#E8F8F5', color: '#16A085' };
     }
-    if (item.downloadLink) {
+    if (item?.downloadLink) {
       return { text: lang === 'ur' ? 'دستاویز' : 'Document', bg: '#EBF5FB', color: '#2980B9' };
     }
     return { text: lang === 'ur' ? 'اعلان' : 'Notice', bg: '#FEF9E7', color: '#D35400' };
@@ -162,8 +193,8 @@ export default function NewsScreen({ navigation, route }) {
 
   const renderNewsItem = ({ item }) => {
     const badge = getNewsBadge(item);
-    const CardWrapper = item.downloadLink ? TouchableOpacity : View;
-    const wrapperProps = item.downloadLink
+    const CardWrapper = item?.downloadLink ? TouchableOpacity : View;
+    const wrapperProps = item?.downloadLink
       ? {
           style: styles.newsCard,
           activeOpacity: 0.85,
@@ -178,16 +209,16 @@ export default function NewsScreen({ navigation, route }) {
             <Text style={[styles.badgeText, { color: badge.color }]}>{badge.text}</Text>
           </View>
 
-          <Text style={styles.dateText}>{formatDate(item.publishDate)}</Text>
+          <Text style={styles.dateText}>{formatDate(item?.publishDate)}</Text>
         </View>
 
-        <Text style={styles.newsTitle}>{cleanText(item.title) || 'PINUM Update'}</Text>
+        <Text style={styles.newsTitle}>{cleanText(item?.title) || 'PINUM Update'}</Text>
 
-        {item.description ? (
+        {item?.description ? (
           <Text style={styles.newsDesc}>{cleanText(item.description)}</Text>
         ) : null}
 
-        {item.downloadLink ? (
+        {item?.downloadLink ? (
           <View style={styles.downloadBtn}>
             <Ionicons 
               name={
@@ -215,14 +246,12 @@ export default function NewsScreen({ navigation, route }) {
 
   const keyExtractor = (item, index) => {
     if (item?.id !== undefined && item?.id !== null && item?.id !== '') {
-      return String(item.id);
+      return `news_id_${item.id}`;
     }
-
     if (item?.raw?.RecID !== undefined && item?.raw?.RecID !== null) {
-      return String(item.raw.RecID);
+      return `news_rec_${item.raw.RecID}`;
     }
-
-    return `news_${index}`;
+    return `news_idx_${index}`;
   };
 
   return (
@@ -269,7 +298,7 @@ export default function NewsScreen({ navigation, route }) {
           initialNumToRender={8}
           maxToRenderPerBatch={10}
           windowSize={10}
-          removeClippedSubviews={Platform.OS === 'android'}
+          removeClippedSubviews={false}
           ListEmptyComponent={
             <View style={styles.center}>
               <Ionicons name="newspaper-outline" size={60} color="#ccc" />

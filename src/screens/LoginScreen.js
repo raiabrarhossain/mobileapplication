@@ -60,9 +60,13 @@ export default function LoginScreen({ navigation }) {
 
   const handleFocus = (inputType) => {
     setFocusedInput(inputType);
-    if (inputType === 'captcha') {
+    if (inputType === 'password') {
       setTimeout(() => {
-        scrollViewRef.current?.scrollTo({ y: 180, animated: true });
+        scrollViewRef.current?.scrollTo({ y: 110, animated: true });
+      }, 100);
+    } else if (inputType === 'captcha') {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ y: 220, animated: true });
       }, 100);
     }
   };
@@ -197,7 +201,7 @@ export default function LoginScreen({ navigation }) {
       >
         <ScrollView
           ref={scrollViewRef}
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 160 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -235,11 +239,7 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.brandName}>PINUM HOSPITAL</Text>
             <Text style={styles.welcomeText}>Sign in to view your medical reports</Text>
 
-            <TouchableOpacity 
-              activeOpacity={1}
-              onPress={() => prnRef.current?.focus()}
-              style={styles.inputContainer}
-            >
+            <View style={styles.inputContainer}>
               <Text style={styles.label}>PRN Number</Text>
               <TextInput
                 ref={prnRef}
@@ -257,9 +257,10 @@ export default function LoginScreen({ navigation }) {
                 autoCapitalize="none"
                 returnKeyType="next"
                 blurOnSubmit={false}
+                showSoftInputOnFocus={true}
                 onSubmitEditing={() => passwordRef.current?.focus()}
               />
-            </TouchableOpacity>
+            </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Password</Text>
@@ -280,6 +281,7 @@ export default function LoginScreen({ navigation }) {
                   onBlur={() => setFocusedInput(null)}
                   returnKeyType="next"
                   blurOnSubmit={false}
+                  showSoftInputOnFocus={true}
                   onSubmitEditing={() => captchaRef.current?.focus()}
                 />
                 <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={styles.eyeBtn}>
@@ -322,6 +324,7 @@ export default function LoginScreen({ navigation }) {
                   autoCorrect={false}
                   spellCheck={false}
                   autoComplete="off"
+                  showSoftInputOnFocus={true}
                   returnKeyType="done"
                   onSubmitEditing={handleLogin}
                 />

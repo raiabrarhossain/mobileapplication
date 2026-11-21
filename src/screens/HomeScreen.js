@@ -30,8 +30,10 @@ import { getNotifications, getUnreadCount, markAllAsRead, addNotification } from
 import * as Haptics from 'expo-haptics';
 import { fetchAppSlider, fetchNews, fetchHospitalTimings } from '../services/api';
 
-const HOME_SAMPLING_POSTER_IMG = require('../assets/home_sampling_poster.jpg');
-const PUNJAB_HEALTH_CARD_IMG = require('../assets/punjab_health_card.jpg');
+import { PUNJAB_CARD_BASE64, HOME_SAMPLING_BASE64 } from '../assets/bannerAssets';
+
+const HOME_SAMPLING_POSTER_IMG = { uri: HOME_SAMPLING_BASE64 };
+const PUNJAB_HEALTH_CARD_IMG = { uri: PUNJAB_CARD_BASE64 };
 
 const { width } = Dimensions.get('window');
 const SLIDER_WIDTH = width - 40;
@@ -580,10 +582,10 @@ export default function HomeScreen({ navigation, route }) {
 
         <View style={styles.headerContentRow}>
           <View style={styles.headerTextCol}>
-            <Text style={[styles.welcomeText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 16, lineHeight: 28 }]}>
+            <Text style={[styles.welcomeText, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 15, lineHeight: 26 }]}>
               {user ? 'Welcome back,' : t.welcome}
             </Text>
-            <Text style={styles.hospitalName} numberOfLines={1} adjustsFontSizeToFit>
+            <Text style={styles.hospitalName} numberOfLines={2}>
               {user ? user.fullName || 'Patient' : 'AECH PINUM Cancer Hospital'}
             </Text>
 
@@ -593,12 +595,12 @@ export default function HomeScreen({ navigation, route }) {
               transition={{ duration: 600, delay: 200 }}
               style={styles.urduContainer}
             >
-              <Text style={styles.urduText} numberOfLines={1}>
+              <Text style={styles.urduText} numberOfLines={1} adjustsFontSizeToFit>
                 پینم کینسر ہسپتال
               </Text>
             </MotiView>
 
-            <Text style={[styles.tagline, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 14, lineHeight: 24 }]} numberOfLines={1}>
+            <Text style={[styles.tagline, appLanguage === 'ur' && { fontFamily: URDU_FONT, fontSize: 13, lineHeight: 22 }]} numberOfLines={2}>
               {t.tagline}
             </Text>
           </View>
@@ -901,7 +903,7 @@ export default function HomeScreen({ navigation, route }) {
             index={8}
             imageUri="https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=600&auto=format&fit=crop"
             label={t.appointment}
-            onPress={() => setIsComingSoonVisible(true)}
+            onPress={() => navigation.navigate('Appointment', { language: appLanguage })}
           />
         </View>
       </ScrollView>
@@ -1145,9 +1147,26 @@ export default function HomeScreen({ navigation, route }) {
               <Text style={styles.comingSoonTitleText}>{t.comingSoonTitle}</Text>
               <Text style={styles.comingSoonMessageText}>
                 {appLanguage === 'ur'
-                  ? 'ہسپتال کی آن لائن اپائنٹمنٹ بکنگ سروس جلد دستیاب ہوگی۔ ہم اس پر کام کر رہے ہیں!'
-                  : 'We are working on setting up the online hospital appointment system. Stay tuned!'}
+                  ? 'ہسپتال کی آن لائن اپائنٹمنٹ بکنگ سروس جلد دستیاب ہوگی۔ مینول اپائنٹمنٹ کے لیے استقبالیہ (ریسیپشن) پر رابطہ کریں:'
+                  : 'Online hospital appointment booking is coming soon. For manual booking, contact hospital reception:'}
               </Text>
+
+              <TouchableOpacity 
+                style={[styles.contactItemRow, { marginVertical: 10, width: '100%' }]}
+                onPress={() => Linking.openURL('tel:+92419210171')}
+                activeOpacity={0.85}
+              >
+                <View style={styles.contactIconContainer}>
+                  <Ionicons name="call" size={22} color={COLORS.primary} />
+                </View>
+                <View style={styles.contactTextCol}>
+                  <Text style={styles.contactItemLabel}>PHONE / RECEPTION</Text>
+                  <Text style={styles.contactItemValue}>(+92)-41-9210171-77</Text>
+                </View>
+                <View style={styles.callNowBadge}>
+                  <Text style={styles.callNowBadgeText}>{appLanguage === 'ur' ? 'کال کریں' : 'Call Now'}</Text>
+                </View>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.comingSoonCloseBtn}
                 onPress={() => setIsComingSoonVisible(false)}
@@ -1650,7 +1669,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
   headerTextCol: {
-    flex: 1
+    flex: 1,
+    paddingRight: 6
   },
   headerStatusContainer: {
     paddingHorizontal: 8,
@@ -1699,32 +1719,34 @@ const styles = StyleSheet.create({
   },
   hospitalName: {
     color: COLORS.white,
-    fontSize: 19,
+    fontSize: 16,
     fontWeight: 'bold',
-    lineHeight: 25,
-    marginTop: 2
+    lineHeight: 22,
+    marginTop: 2,
+    letterSpacing: 0.2
   },
   urduContainer: {
-    marginTop: 6,
-    marginBottom: 4
+    marginTop: 4,
+    marginBottom: 2
   },
   urduText: {
     color: COLORS.white,
-    fontSize: 34,
+    fontSize: 22,
     fontFamily: URDU_FONT,
     textAlign: 'left',
     textShadowColor: 'rgba(0, 0, 0, 0.25)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
-    lineHeight: 56,
-    paddingVertical: 4
+    lineHeight: 38,
+    paddingVertical: 1
   },
   tagline: {
     color: '#E3F2FD',
-    fontSize: 12.5,
+    fontSize: 12,
     marginTop: 2,
     fontStyle: 'italic',
-    opacity: 0.9
+    opacity: 0.95,
+    lineHeight: 17
   },
   whatsappBtn: {
     backgroundColor: COLORS.success,

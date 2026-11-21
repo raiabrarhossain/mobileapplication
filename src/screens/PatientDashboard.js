@@ -494,7 +494,7 @@ export default function PatientDashboard({ navigation, route }) {
             initialNumToRender={8}
             maxToRenderPerBatch={10}
             windowSize={10}
-            removeClippedSubviews={Platform.OS === 'android'}
+            removeClippedSubviews={false}
           />
         )}
       </View>

@@ -376,7 +376,7 @@ export default function DoctorsScreen({ navigation, route }) {
           initialNumToRender={8}
           maxToRenderPerBatch={10}
           windowSize={10}
-          removeClippedSubviews={Platform.OS === 'android'}
+          removeClippedSubviews={false}
           ListEmptyComponent={
             <View style={styles.center}>
               <Ionicons name="people-outline" size={60} color="#ccc" />

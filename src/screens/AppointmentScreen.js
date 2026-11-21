@@ -1,202 +1,72 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  TextInput,
-  ActivityIndicator,
-  Modal,
   StatusBar,
-  Alert
+  Linking,
+  Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
-import { fetchDepartments } from '../services/api';
 
 const GRADIENT_COLORS = ['#2D9CDB', '#8E44AD'];
 const COLORS = {
   primary: '#2D9CDB',
   accent: '#8E44AD',
+  navy: '#0B2265',
   bg: '#F5F6FA',
   white: '#FFFFFF',
-  text: '#2C3E50',
-  textLight: '#7F8C8D',
-  success: '#27AE60'
+  text: '#1F2937',
+  textLight: '#6B7280',
+  success: '#27AE60',
+  successBg: '#E8F8F5',
+  warning: '#F39C12',
+  warningBg: '#FEF9E7',
+  cardBg: '#FFFFFF',
+  border: '#E2E8F0',
 };
 
-const TIME_SLOTS = ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM'];
-
-const TRANSLATIONS = {
-  en: {
-    title: 'Book Appointment',
-    loadingText: 'Fetching available specialists...',
-    patientInfo: 'Patient Information',
-    fullNameLabel: 'Patient Full Name *',
-    fullNamePlaceholder: 'Enter full name',
-    phoneLabel: 'Mobile Phone Number *',
-    phonePlaceholder: 'e.g. 03001234567',
-    cnicLabel: 'CNIC Number (Optional)',
-    cnicPlaceholder: 'e.g. 33100-1234567-1',
-    deptSpecSection: 'Department & Specialist',
-    deptLabel: 'Clinical Department *',
-    deptPlaceholder: 'Choose department',
-    specLabel: 'Doctor/Expert Specialist *',
-    specPlaceholder: 'Choose specialist',
-    dateTimeSection: 'Date & Time Slot',
-    dateLabel: 'Booking Date',
-    slotsLabel: 'Available Slots',
-    tomorrow: 'Tomorrow',
-    in2Days: 'In 2 Days',
-    in3Days: 'In 3 Days',
-    submitBtn: 'Book Appointment Request',
-    deptModalTitle: 'Choose Department',
-    specModalTitle: 'Choose Specialist',
-    emptySpecs: 'No experts registered in this department.',
-    successTitle: 'Booking Successful!',
-    successDesc: 'Your appointment request is registered with PINUM. Your booking code is:',
-    successNote: 'We have sent a SMS confirmation to {phone}. Please arrive 15 minutes before your time slot.',
-    homeBtn: 'Go to Home',
-    missingFieldName: 'Please enter the patient name.',
-    missingFieldPhone: 'Please enter a contact phone number.',
-    missingSelectDept: 'Please select a clinical department.',
-    missingSelectDoc: 'Please select an expert specialist.',
-    missingFieldTitle: 'Missing Field',
-    missingSelectTitle: 'Missing Selection'
-  },
-  ur: {
-    title: 'اپائنٹمنٹ بک کریں',
-    loadingText: 'دستیاب ماہرین کی تفصیلات لوڈ ہو رہی ہیں...',
-    patientInfo: 'مریض کی معلومات',
-    fullNameLabel: 'مریض کا مکمل نام *',
-    fullNamePlaceholder: 'مکمل نام درج کریں',
-    phoneLabel: 'موبائل فون نمبر *',
-    phonePlaceholder: 'مثال کے طور پر 03001234567',
-    cnicLabel: 'شناختی کارڈ نمبر (اختیاری)',
-    cnicPlaceholder: 'مثال: 33100-1234567-1',
-    deptSpecSection: 'شعبہ اور ماہر ڈاکٹر',
-    deptLabel: 'طبی شعبہ *',
-    deptPlaceholder: 'شعبہ منتخب کریں',
-    specLabel: 'ڈاکٹر / ماہر معالج *',
-    specPlaceholder: 'معالج منتخب کریں',
-    dateTimeSection: 'تاریخ اور وقت',
-    dateLabel: 'بکنگ کی تاریخ',
-    slotsLabel: 'دستیاب وقت',
-    tomorrow: 'کل',
-    in2Days: '2 دن میں',
-    in3Days: '3 دن میں',
-    submitBtn: 'اپائنٹمنٹ بکنگ کی درخواست کریں',
-    deptModalTitle: 'شعبہ منتخب کریں',
-    specModalTitle: 'ماہر منتخب کریں',
-    emptySpecs: 'اس شعبے میں کوئی ماہر رجسٹرڈ نہیں ہے۔',
-    successTitle: 'بکنگ کامیاب رہی!',
-    successDesc: 'آپ کی اپائنٹمنٹ کی درخواست پینم کے پاس رجسٹرڈ ہو گئی ہے۔ آپ کا بکنگ کوڈ ہے:',
-    successNote: 'ہم نے {phone} پر ایس ایم ایس تصدیق بھیج دی ہے۔ براہ کرم اپنے وقت سے 15 منٹ پہلے تشریف لائیں۔',
-    homeBtn: 'ہوم پر جائیں',
-    missingFieldName: 'براہ کرم مریض کا نام درج کریں۔',
-    missingFieldPhone: 'براہ کرم رابطہ فون نمبر درج کریں۔',
-    missingSelectDept: 'براہ کرم طبی شعبہ منتخب کریں۔',
-    missingSelectDoc: 'براہ کرم ماہر معالج منتخب کریں۔',
-    missingFieldTitle: 'معلومات غائب ہے',
-    missingSelectTitle: 'سلیکشن غائب ہے'
-  }
-};
+const URDU_FONT = 'JameelNooriNastaleeq';
+const RECEPTION_PHONE_DISPLAY = '(+92)-41-9210171-77';
+const RECEPTION_TEL_URL = 'tel:+92419210171';
+const HELPLINE_PHONE = '0336-1634118';
 
 export default function AppointmentScreen({ navigation, route }) {
-  const [departments, setDepartments] = useState([]);
-  const [selectedDept, setSelectedDept] = useState(null);
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [doctorsList, setDoctorsList] = useState([]);
-  
-  const [patientName, setPatientName] = useState('');
-  const [patientPhone, setPatientPhone] = useState('');
-  const [patientCnic, setPatientCnic] = useState('');
-  const [preferredDate, setPreferredDate] = useState('Tomorrow');
-  const [selectedSlot, setSelectedSlot] = useState('10:00 AM');
-  
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const [bookingId, setBookingId] = useState('');
+  const [lang, setLang] = useState(route.params?.language || 'ur');
 
-  // Dropdown states
-  const [isDeptModalVisible, setIsDeptModalVisible] = useState(false);
-  const [isDocModalVisible, setIsDocModalVisible] = useState(false);
-
-  const lang = route.params?.language || 'en';
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
-
-  useEffect(() => {
-    loadDepartmentsList();
-  }, []);
-
-  const loadDepartmentsList = async () => {
+  const handleCallReception = async () => {
     try {
-      setLoading(true);
-      const data = await fetchDepartments();
-      if (Array.isArray(data)) {
-        const mapped = data.map(item => ({
-          id: item.depId !== undefined ? item.depId : item.DepId,
-          name: item.depName || item.DepName || "Unnamed Department",
-          experts: item.experts || item.Experts || []
-        }));
-        setDepartments(mapped);
+      const supported = await Linking.canOpenURL(RECEPTION_TEL_URL);
+      if (supported) {
+        await Linking.openURL(RECEPTION_TEL_URL);
+      } else {
+        await Linking.openURL(RECEPTION_TEL_URL);
       }
     } catch (e) {
-      // Suppress department error in production
-    } finally {
-      setLoading(false);
+      Alert.alert(
+        lang === 'ur' ? 'کال ملانے میں خرابی' : 'Call Error',
+        lang === 'ur'
+          ? `فون نمبر ڈائل نہیں ہو سکا۔ براہ کرم دستی طور پر ${RECEPTION_PHONE_DISPLAY} ڈائل کریں۔`
+          : `Could not launch dialer. Please dial ${RECEPTION_PHONE_DISPLAY} manually.`
+      );
     }
   };
 
-  const handleSelectDepartment = (dept) => {
-    setSelectedDept(dept);
-    setSelectedDoctor(null);
-    setDoctorsList(dept.experts || []);
-    setIsDeptModalVisible(false);
+  const handleCallHelpline = async () => {
+    try {
+      await Linking.openURL(`tel:${HELPLINE_PHONE.replace(/-/g, '')}`);
+    } catch (e) {
+      Alert.alert('Helpline', HELPLINE_PHONE);
+    }
   };
 
-  const handleSelectDoctor = (doc) => {
-    setSelectedDoctor(doc);
-    setIsDocModalVisible(false);
-  };
-
-  const handleSubmit = () => {
-    if (!patientName.trim()) {
-      Alert.alert(t.missingFieldTitle, t.missingFieldName);
-      return;
-    }
-    if (!patientPhone.trim()) {
-      Alert.alert(t.missingFieldTitle, t.missingFieldPhone);
-      return;
-    }
-    if (!selectedDept) {
-      Alert.alert(t.missingSelectTitle, t.missingSelectDept);
-      return;
-    }
-    if (!selectedDoctor) {
-      Alert.alert(t.missingSelectTitle, t.missingSelectDoc);
-      return;
-    }
-
-    setSubmitting(true);
-    
-    // Simulate booking API call
-    setTimeout(() => {
-      setSubmitting(false);
-      const randomId = 'PINUM-' + Math.floor(100000 + Math.random() * 900000);
-      setBookingId(randomId);
-      setSuccessModalVisible(true);
-    }, 1800);
-  };
-
-  const handleFinishBooking = () => {
-    setSuccessModalVisible(false);
-    navigation.navigate('Home');
-  };
+  const isUrdu = lang === 'ur';
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -204,242 +74,277 @@ export default function AppointmentScreen({ navigation, route }) {
 
       {/* Header */}
       <LinearGradient colors={GRADIENT_COLORS} style={styles.header} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={16} color={COLORS.white} />
-          <Text style={styles.backBtnText}>Home</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.8}>
+          <Ionicons name="arrow-back" size={18} color={COLORS.white} />
+          <Text style={styles.backBtnText}>{isUrdu ? 'واپس' : 'Home'}</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t.title}</Text>
-        <View style={{ width: 75 }} />
+
+        <View style={styles.headerTitleWrap}>
+          <Text style={styles.headerTitle}>
+            {isUrdu ? 'ڈاکٹر اپائنٹمنٹ' : 'Doctor Appointments'}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {isUrdu ? 'پینم کینسر ہسپتال فیصل آباد' : 'PINUM Hospital Faisalabad'}
+          </Text>
+        </View>
+
+        {/* Language switch */}
+        <TouchableOpacity
+          style={styles.langToggleBtn}
+          onPress={() => setLang(isUrdu ? 'en' : 'ur')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.langToggleText}>{isUrdu ? 'EN' : 'اردو'}</Text>
+        </TouchableOpacity>
       </LinearGradient>
 
-      {loading ? (
-        <View style={styles.centerBox}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>{t.loadingText}</Text>
-        </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          
-          <MotiView from={{ opacity: 0, translateY: 15 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing' }}>
-            <Text style={styles.sectionTitle}>{t.patientInfo}</Text>
-            
-            <View style={styles.inputCard}>
-              <Text style={styles.inputLabel}>{t.fullNameLabel}</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="person-outline" size={18} color={COLORS.textLight} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.textInput}
-                  placeholder={t.fullNamePlaceholder}
-                  placeholderTextColor={COLORS.textLight}
-                  value={patientName}
-                  onChangeText={setPatientName}
-                />
-              </View>
-
-              <Text style={styles.inputLabel}>{t.phoneLabel}</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="call-outline" size={18} color={COLORS.textLight} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.textInput}
-                  placeholder={t.phonePlaceholder}
-                  placeholderTextColor={COLORS.textLight}
-                  keyboardType="phone-pad"
-                  value={patientPhone}
-                  onChangeText={setPatientPhone}
-                />
-              </View>
-
-              <Text style={styles.inputLabel}>{t.cnicLabel}</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="card-outline" size={18} color={COLORS.textLight} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.textInput}
-                  placeholder={t.cnicPlaceholder}
-                  placeholderTextColor={COLORS.textLight}
-                  keyboardType="numeric"
-                  value={patientCnic}
-                  onChangeText={setPatientCnic}
-                />
-              </View>
-            </View>
-          </MotiView>
-
-          <MotiView from={{ opacity: 0, translateY: 15 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', delay: 100 }}>
-            <Text style={[styles.sectionTitle, { marginTop: 20 }]}>{t.deptSpecSection}</Text>
-            
-            <View style={styles.inputCard}>
-              {/* Select Department */}
-              <Text style={styles.inputLabel}>{t.deptLabel}</Text>
-              <TouchableOpacity style={styles.dropdownBtn} onPress={() => setIsDeptModalVisible(true)}>
-                <View style={styles.dropdownLeft}>
-                  <MaterialCommunityIcons name="office-building-cog" size={18} color={COLORS.textLight} style={styles.inputIcon} />
-                  <Text style={selectedDept ? styles.dropdownText : styles.dropdownPlaceholder}>
-                    {selectedDept ? selectedDept.name : t.deptPlaceholder}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-down" size={18} color={COLORS.textLight} />
-              </TouchableOpacity>
-
-              {/* Select Doctor */}
-              <Text style={styles.inputLabel}>{t.specLabel}</Text>
-              <TouchableOpacity
-                style={[styles.dropdownBtn, !selectedDept && styles.disabledBtn]}
-                disabled={!selectedDept}
-                onPress={() => setIsDocModalVisible(true)}
-              >
-                <View style={styles.dropdownLeft}>
-                  <MaterialCommunityIcons name="doctor" size={18} color={COLORS.textLight} style={styles.inputIcon} />
-                  <Text style={selectedDoctor ? styles.dropdownText : styles.dropdownPlaceholder}>
-                    {selectedDoctor ? selectedDoctor.ExpName || selectedDoctor.name || selectedDoctor.ExpertName : t.specPlaceholder}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-down" size={18} color={COLORS.textLight} />
-              </TouchableOpacity>
-            </View>
-          </MotiView>
-
-          <MotiView from={{ opacity: 0, translateY: 15 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'timing', delay: 200 }}>
-            <Text style={[styles.sectionTitle, { marginTop: 20 }]}>{t.dateTimeSection}</Text>
-            
-            <View style={styles.inputCard}>
-              {/* Date selection mock */}
-              <Text style={styles.inputLabel}>{t.dateLabel}</Text>
-              <View style={styles.datesRow}>
-                {['Tomorrow', 'In 2 Days', 'In 3 Days'].map(item => {
-                  let dateBtnText = item;
-                  if (item === 'Tomorrow') dateBtnText = t.tomorrow;
-                  else if (item === 'In 2 Days') dateBtnText = t.in2Days;
-                  else if (item === 'In 3 Days') dateBtnText = t.in3Days;
-
-                  return (
-                    <TouchableOpacity
-                      key={item}
-                      style={[styles.dateChoice, preferredDate === item && styles.dateChoiceActive]}
-                      onPress={() => setPreferredDate(item)}
-                    >
-                      <Text style={[styles.dateChoiceText, preferredDate === item && styles.dateChoiceTextActive]}>
-                        {dateBtnText}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Time Slots */}
-              <Text style={styles.inputLabel}>{t.slotsLabel}</Text>
-              <View style={styles.slotsGrid}>
-                {TIME_SLOTS.map(slot => (
-                  <TouchableOpacity
-                    key={slot}
-                    style={[styles.slotPill, selectedSlot === slot && styles.slotPillActive]}
-                    onPress={() => setSelectedSlot(slot)}
-                  >
-                    <Text style={[styles.slotText, selectedSlot === slot && styles.slotTextActive]}>
-                      {slot}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Submit Button */}
-            <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={submitting}>
-              <LinearGradient colors={GRADIENT_COLORS} style={styles.submitGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-                {submitting ? (
-                  <ActivityIndicator size="small" color={COLORS.white} />
-                ) : (
-                  <Text style={styles.submitText}>{t.submitBtn}</Text>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
-          </MotiView>
-        </ScrollView>
-      )}
-
-      {/* Select Department Modal */}
-      <Modal visible={isDeptModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t.deptModalTitle}</Text>
-              <TouchableOpacity onPress={() => setIsDeptModalVisible(false)} style={styles.modalCloseBtn}>
-                <Ionicons name="close" size={24} color={COLORS.text} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView>
-              {departments.map(dept => (
-                <TouchableOpacity key={dept.id} style={styles.modalSelectableItem} onPress={() => handleSelectDepartment(dept)}>
-                  <MaterialCommunityIcons name="stethoscope" size={20} color={COLORS.primary} style={{ marginRight: 15 }} />
-                  <Text style={styles.modalItemText}>{dept.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Select Doctor Modal */}
-      <Modal visible={isDocModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t.specModalTitle}</Text>
-              <TouchableOpacity onPress={() => setIsDocModalVisible(false)} style={styles.modalCloseBtn}>
-                <Ionicons name="close" size={24} color={COLORS.text} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView>
-              {doctorsList.length === 0 ? (
-                <View style={styles.emptySelectBox}>
-                  <Text style={styles.emptySelectText}>{t.emptySpecs}</Text>
-                </View>
-              ) : (
-                doctorsList.map((doc, idx) => {
-                  const name = doc.ExpName || doc.name || doc.ExpertName || 'Doctor';
-                  return (
-                    <TouchableOpacity key={idx} style={styles.modalSelectableItem} onPress={() => handleSelectDoctor(doc)}>
-                      <MaterialCommunityIcons name="doctor" size={20} color={COLORS.primary} style={{ marginRight: 15 }} />
-                      <View>
-                        <Text style={styles.modalItemText}>{name}</Text>
-                        {doc.ExpDesignation ? <Text style={styles.modalSubItemText}>{doc.ExpDesignation}</Text> : null}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })
-              )}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Success Booking Modal */}
-      <Modal visible={successModalVisible} transparent={true} animationType="fade">
-        <View style={styles.successOverlay}>
-          <MotiView
-            from={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring' }}
-            style={styles.successBox}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* 1. HERO COMING SOON CARD */}
+        <MotiView
+          from={{ opacity: 0, translateY: 15 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'timing', duration: 400 }}
+          style={styles.comingSoonCard}
+        >
+          <LinearGradient
+            colors={['#1E3A8A', '#3B82F6']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.comingSoonGrad}
           >
-            <View style={styles.successIconCircle}>
-              <Ionicons name="checkmark-done-circle" size={80} color={COLORS.success} />
+            <View style={styles.badgeRow}>
+              <View style={styles.comingSoonPill}>
+                <Ionicons name="rocket-outline" size={13} color="#FFFFFF" style={{ marginRight: 5 }} />
+                <Text style={styles.comingSoonPillText}>
+                  {isUrdu ? 'آن لائن سہولت جلد دستیاب ہوگی' : 'ONLINE BOOKING COMING SOON'}
+                </Text>
+              </View>
             </View>
-            <Text style={styles.successTitle}>{t.successTitle}</Text>
-            <Text style={styles.successDesc}>
-              {t.successDesc}
-            </Text>
-            <View style={styles.bookingIdBox}>
-              <Text style={styles.bookingIdText}>{bookingId}</Text>
+
+            <View style={styles.heroTextRow}>
+              <View style={styles.heroIconBox}>
+                <Ionicons name="calendar" size={32} color="#FFFFFF" />
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[styles.heroTitle, isUrdu && styles.heroTitleUrdu]}>
+                  {isUrdu
+                    ? 'آن لائن اپائنٹمنٹ بکنگ سروس جلد دستیاب ہوگی'
+                    : 'Online Doctor Booking Coming Soon'}
+                </Text>
+                <Text style={[styles.heroDesc, isUrdu && styles.heroDescUrdu]}>
+                  {isUrdu
+                    ? 'پینم کینسر ہسپتال کے جدید آن لائن پورٹل پر کام جاری ہے۔ موبائل ایپ سے براہ راست سلاٹ بکنگ کی سہولت بہت جلد فعال کر دی جائے گی۔'
+                    : 'We are actively integrating our digital appointment scheduling system into the PINUM mobile app. Direct online booking will be available very soon.'}
+                </Text>
+              </View>
             </View>
-            <Text style={styles.successNote}>
-              {t.successNote.replace('{phone}', patientPhone)}
+          </LinearGradient>
+        </MotiView>
+
+        {/* 2. PROMINENT MANUAL APPOINTMENT & RECEPTION CARD */}
+        <MotiView
+          from={{ opacity: 0, translateY: 15 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'timing', duration: 450, delay: 100 }}
+          style={styles.sectionWrap}
+        >
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="information-circle" size={20} color={COLORS.primary} style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, isUrdu && styles.sectionTitleUrdu]}>
+              {isUrdu ? 'مینول اپائنٹمنٹ اور معائنہ' : 'Manual Appointment & Registration'}
             </Text>
-            <TouchableOpacity style={styles.successCloseBtn} onPress={handleFinishBooking}>
-              <Text style={styles.successCloseBtnText}>{t.homeBtn}</Text>
+          </View>
+
+          <View style={styles.instructionCard}>
+            <Text style={[styles.instructionText, isUrdu && styles.instructionTextUrdu]}>
+              {isUrdu
+                ? 'مینول اپائنٹمنٹ، او پی ڈی معائنے کا وقت اور ٹوکن حاصل کرنے کے لیے برائے مہربانی ہسپتال کے استقبالیہ (ریسیپشن) پر رابطہ کریں:'
+                : 'For manual appointment scheduling, OPD doctor consultations, and token issuance, please contact Hospital Reception:'}
+            </Text>
+
+            {/* Exact Phone / Reception Row matching Hospital Theme */}
+            <TouchableOpacity
+              style={styles.contactItemRow}
+              onPress={handleCallReception}
+              activeOpacity={0.85}
+            >
+              <View style={styles.contactIconContainer}>
+                <Ionicons name="call" size={22} color={COLORS.primary} />
+              </View>
+
+              <View style={styles.contactTextCol}>
+                <Text style={styles.contactItemLabel}>PHONE / RECEPTION</Text>
+                <Text style={styles.contactItemValue}>{RECEPTION_PHONE_DISPLAY}</Text>
+              </View>
+
+              <View style={styles.callNowBadge}>
+                <Text style={styles.callNowBadgeText}>{isUrdu ? 'کال کریں' : 'Call Now'}</Text>
+              </View>
             </TouchableOpacity>
-          </MotiView>
-        </View>
-      </Modal>
+
+            <View style={styles.subCallHintRow}>
+              <Ionicons name="checkmark-circle" size={14} color={COLORS.success} />
+              <Text style={styles.subCallHintText}>
+                {isUrdu
+                  ? 'ایک ہی وقت میں 7 لائنیں دستیاب ہیں (041-9210171 تا 77)'
+                  : '7 Exchange telephone lines available simultaneously'}
+              </Text>
+            </View>
+          </View>
+        </MotiView>
+
+        {/* 3. RECEPTION COUNTER TIMINGS & PROCEDURES */}
+        <MotiView
+          from={{ opacity: 0, translateY: 15 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'timing', duration: 500, delay: 200 }}
+          style={styles.timingCard}
+        >
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.timingIconCircle}>
+              <Ionicons name="time" size={20} color="#0B2265" />
+            </View>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[styles.timingCardTitle, isUrdu && styles.timingCardTitleUrdu]}>
+                {isUrdu ? 'استقبالیہ اور او پی ڈی کے اوقات کار' : 'Reception & OPD Working Hours'}
+              </Text>
+              <Text style={styles.timingCardSubtitle}>
+                {isUrdu ? 'پینم کینسر ہسپتال فیصل آباد' : 'AECH PINUM Cancer Hospital'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Time schedule items */}
+          <View style={styles.scheduleRow}>
+            <View style={styles.dayCol}>
+              <Text style={styles.dayTitle}>{isUrdu ? 'پیر تا جمعرات اور ہفتہ' : 'Mon to Thu & Saturday'}</Text>
+              <Text style={styles.dayHours}>08:00 AM – 02:30 PM</Text>
+            </View>
+            <View style={styles.statusPillOpen}>
+              <Text style={styles.statusTextOpen}>{isUrdu ? 'او پی ڈی کھلا ہے' : 'OPD Active'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.scheduleRow}>
+            <View style={styles.dayCol}>
+              <Text style={styles.dayTitle}>{isUrdu ? 'جمعہ المبارک (Friday)' : 'Friday Timing'}</Text>
+              <Text style={styles.dayHours}>08:00 AM – 12:30 PM</Text>
+            </View>
+            <View style={styles.statusPillBreak}>
+              <Text style={styles.statusTextBreak}>{isUrdu ? 'نمازِ جمعہ وقفہ' : 'Jummah Break'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.scheduleRow}>
+            <View style={styles.dayCol}>
+              <Text style={styles.dayTitle}>{isUrdu ? 'اتوار (Sunday)' : 'Sunday'}</Text>
+              <Text style={styles.dayHours}>{isUrdu ? 'او پی ڈی بند • ایمرجنسی 24 گھنٹے' : 'OPD Closed • Emergency 24/7'}</Text>
+            </View>
+            <View style={styles.statusPillClosed}>
+              <Text style={styles.statusTextClosed}>{isUrdu ? 'اتوار بند' : 'Closed'}</Text>
+            </View>
+          </View>
+        </MotiView>
+
+        {/* 4. PATIENT GUIDELINES & MANUAL BOOKING STEPS */}
+        <MotiView
+          from={{ opacity: 0, translateY: 15 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'timing', duration: 550, delay: 250 }}
+          style={styles.guidelinesCard}
+        >
+          <View style={styles.cardHeaderRow}>
+            <View style={[styles.timingIconCircle, { backgroundColor: '#E0F2FE' }]}>
+              <FontAwesome5 name="clipboard-list" size={17} color="#0284C7" />
+            </View>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[styles.timingCardTitle, isUrdu && styles.timingCardTitleUrdu]}>
+                {isUrdu ? 'مریضوں کے لیے ضروری ہدایات' : 'Important Patient Guidelines'}
+              </Text>
+              <Text style={styles.timingCardSubtitle}>
+                {isUrdu ? 'معائنے کے وقت درج ذیل نکات کا خیال رکھیں' : 'Required for Doctor Checkup'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.stepItem}>
+            <View style={styles.stepNumberBadge}>
+              <Text style={styles.stepNumberText}>1</Text>
+            </View>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[styles.stepItemTitle, isUrdu && styles.stepItemTitleUrdu]}>
+                {isUrdu ? 'استقبالیہ سے ٹوکن کا حصول' : 'Obtain Daily Token from Reception'}
+              </Text>
+              <Text style={[styles.stepItemDesc, isUrdu && styles.stepItemDescUrdu]}>
+                {isUrdu
+                  ? 'معائنے کے لیے براہ کرم ہسپتال تشریف لا کر مرکزی استقبالیہ کاؤنٹر سے روزانہ کا معائنہ ٹوکن حاصل فرمائیں۔'
+                  : 'Please arrive at the hospital main reception counter to receive your daily OPD checkup token.'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.stepItem}>
+            <View style={styles.stepNumberBadge}>
+              <Text style={styles.stepNumberText}>2</Text>
+            </View>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[styles.stepItemTitle, isUrdu && styles.stepItemTitleUrdu]}>
+                {isUrdu ? 'نئی رجسٹریشن و میڈیکل فائل' : 'Patient Registration & Medical File'}
+              </Text>
+              <Text style={[styles.stepItemDesc, isUrdu && styles.stepItemDescUrdu]}>
+                {isUrdu
+                  ? 'نئے مریض پہلی بار تشریف لانے پر قومی شناختی کارڈ (یا ب فارم) پیش کر کے رجسٹریشن کاؤنٹر سے فائل بنوائیں۔'
+                  : 'First-time patients must present their original CNIC or B-Form at the registration counter.'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.stepItem}>
+            <View style={styles.stepNumberBadge}>
+              <Text style={styles.stepNumberText}>3</Text>
+            </View>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[styles.stepItemTitle, isUrdu && styles.stepItemTitleUrdu]}>
+                {isUrdu ? 'سابقہ رپورٹس اور ٹیسٹ ہمراہ لائیں' : 'Bring All Previous Medical Reports'}
+              </Text>
+              <Text style={[styles.stepItemDesc, isUrdu && styles.stepItemDescUrdu]}>
+                {isUrdu
+                  ? 'ڈاکٹر کے درست معائنے کے لیے تمام پرانی لیب رپورٹس، ایکسرے، سی ٹی اسکین، بائیوپسی اور نسخہ جات ساتھ لائیں۔'
+                  : 'Bring all previous diagnostic lab test records, biopsy, scan results, and ongoing prescriptions.'}
+              </Text>
+            </View>
+          </View>
+        </MotiView>
+
+        {/* 5. DIRECT CALL ACTION BUTTON */}
+        <TouchableOpacity
+          style={styles.bigCallBtn}
+          onPress={handleCallReception}
+          activeOpacity={0.88}
+        >
+          <LinearGradient
+            colors={['#27AE60', '#2ECC71']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.bigCallGrad}
+          >
+            <Ionicons name="call" size={22} color={COLORS.white} style={{ marginRight: 10 }} />
+            <View style={{ alignItems: 'center' }}>
+              <Text style={styles.bigCallTitle}>
+                {isUrdu ? 'ہسپتال استقبالیہ پر فوری کال کریں' : 'Call Hospital Reception Desk'}
+              </Text>
+              <Text style={styles.bigCallSub}>{RECEPTION_PHONE_DISPLAY}</Text>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <View style={{ height: 25 }} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -447,309 +352,423 @@ export default function AppointmentScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg
+    backgroundColor: COLORS.bg,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 15,
-    elevation: 4
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    elevation: 4,
   },
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)'
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   backBtnText: {
     color: COLORS.white,
     fontSize: 13,
     fontWeight: 'bold',
-    marginLeft: 5
+    marginLeft: 4,
+  },
+  headerTitleWrap: {
+    alignItems: 'center',
   },
   headerTitle: {
     color: COLORS.white,
     fontWeight: 'bold',
-    fontSize: 18
+    fontSize: 17,
   },
-  centerBox: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
+  headerSubtitle: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 10.5,
+    marginTop: 1,
   },
-  loadingText: {
-    color: COLORS.textLight,
-    marginTop: 10,
-    fontSize: 14
+  langToggleBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  langToggleText: {
+    color: COLORS.white,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40
+    paddingBottom: 40,
+  },
+
+  // 1. Coming Soon Hero Card
+  comingSoonCard: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    marginBottom: 16,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  comingSoonGrad: {
+    padding: 18,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  comingSoonPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  comingSoonPillText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  heroTextRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  heroIconBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    lineHeight: 22,
+    marginBottom: 6,
+  },
+  heroTitleUrdu: {
+    fontFamily: URDU_FONT,
+    fontSize: 18,
+    lineHeight: 28,
+  },
+  heroDesc: {
+    color: '#E0E7FF',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  heroDescUrdu: {
+    fontSize: 12.5,
+    lineHeight: 20,
+  },
+
+  // 2. Section & Manual Reception Card
+  sectionWrap: {
+    marginBottom: 16,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingHorizontal: 4,
   },
   sectionTitle: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 8,
-    marginLeft: 4
+    color: COLORS.navy,
   },
-  inputCard: {
+  sectionTitleUrdu: {
+    fontFamily: URDU_FONT,
+    fontSize: 18,
+    lineHeight: 26,
+  },
+  instructionCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 16,
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 }
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: COLORS.textLight,
-    marginBottom: 6,
-    marginTop: 10
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.bg,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 46
-  },
-  inputIcon: {
-    marginRight: 10
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 14,
-    color: COLORS.text
-  },
-  dropdownBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.bg,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 46,
-    marginBottom: 10
-  },
-  dropdownLeft: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  dropdownPlaceholder: {
-    fontSize: 14,
-    color: COLORS.textLight
-  },
-  dropdownText: {
-    fontSize: 14,
-    color: COLORS.text,
-    fontWeight: '600'
-  },
-  disabledBtn: {
-    opacity: 0.6
-  },
-  // Date choices
-  datesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 5
-  },
-  dateChoice: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginHorizontal: 4,
+    shadowOffset: { width: 0, height: 2 },
     borderWidth: 1,
-    borderColor: 'transparent'
+    borderColor: '#E2E8F0',
   },
-  dateChoiceActive: {
-    backgroundColor: '#EBF5FB',
-    borderColor: COLORS.primary
-  },
-  dateChoiceText: {
+  instructionText: {
     fontSize: 13,
-    color: COLORS.textLight
+    color: '#334155',
+    lineHeight: 20,
+    marginBottom: 14,
+    fontWeight: '500',
   },
-  dateChoiceTextActive: {
-    color: COLORS.primary,
-    fontWeight: 'bold'
+  instructionTextUrdu: {
+    fontSize: 13.5,
+    lineHeight: 22,
+    color: '#1E293B',
   },
-  // Slots Grid
-  slotsGrid: {
+
+  // Contact Row matching user image exactly
+  contactItemRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 5
-  },
-  slotPill: {
-    backgroundColor: COLORS.bg,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    margin: 4,
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    padding: 14,
+    borderRadius: 15,
     borderWidth: 1,
-    borderColor: 'transparent'
+    borderColor: '#E2E8F0',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 1 },
   },
-  slotPillActive: {
+  contactIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: '#EBF5FB',
-    borderColor: COLORS.primary
-  },
-  slotText: {
-    fontSize: 12,
-    color: COLORS.text
-  },
-  slotTextActive: {
-    color: COLORS.primary,
-    fontWeight: 'bold'
-  },
-  submitBtn: {
-    marginTop: 25,
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: COLORS.primary,
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 3 }
-  },
-  submitGrad: {
-    height: 52,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    marginRight: 14,
   },
-  submitText: {
-    color: COLORS.white,
-    fontWeight: 'bold',
-    fontSize: 16
-  },
-  // Selection Modals
-  modalOverlay: {
+  contactTextCol: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end'
   },
-  modalContent: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    padding: 22,
-    maxHeight: '60%'
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
-    paddingBottom: 10
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text
-  },
-  modalCloseBtn: {
-    padding: 5
-  },
-  modalSelectableItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#EEEEEE'
-  },
-  modalItemText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text
-  },
-  modalSubItemText: {
+  contactItemLabel: {
     fontSize: 11,
     color: COLORS.textLight,
-    marginTop: 2
-  },
-  emptySelectBox: {
-    padding: 30,
-    alignItems: 'center'
-  },
-  emptySelectText: {
-    color: COLORS.textLight,
-    textAlign: 'center'
-  },
-  // Booking Success Modal
-  successOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20
-  },
-  successBox: {
-    backgroundColor: COLORS.white,
-    borderRadius: 25,
-    padding: 25,
-    width: '90%',
-    alignItems: 'center'
-  },
-  successIconCircle: {
-    marginBottom: 15
-  },
-  successTitle: {
-    fontSize: 22,
     fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 10
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  successDesc: {
-    fontSize: 13,
-    color: COLORS.textLight,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 15
+  contactItemValue: {
+    fontSize: 15,
+    color: COLORS.navy,
+    fontWeight: 'bold',
+    marginTop: 2,
   },
-  bookingIdBox: {
-    backgroundColor: '#E8F8F5',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+  callNowBadge: {
+    backgroundColor: COLORS.successBg,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#A3E4D7',
-    marginBottom: 15
+    borderColor: 'rgba(39, 174, 96, 0.2)',
   },
-  bookingIdText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#16A085',
-    letterSpacing: 1
-  },
-  successNote: {
+  callNowBadgeText: {
+    color: COLORS.success,
     fontSize: 12,
-    color: COLORS.textLight,
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 20
-  },
-  successCloseBtn: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 12,
-    elevation: 2
-  },
-  successCloseBtnText: {
-    color: COLORS.white,
     fontWeight: 'bold',
-    fontSize: 14
-  }
+  },
+  subCallHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingHorizontal: 4,
+  },
+  subCallHintText: {
+    fontSize: 11.5,
+    color: '#64748B',
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+
+  // 3. Timing Card
+  timingCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timingIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  timingCardTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.navy,
+  },
+  timingCardTitleUrdu: {
+    fontFamily: URDU_FONT,
+    fontSize: 17,
+    lineHeight: 24,
+  },
+  timingCardSubtitle: {
+    fontSize: 11,
+    color: COLORS.textLight,
+    marginTop: 1,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 12,
+  },
+  scheduleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAFC',
+  },
+  dayCol: {
+    flex: 1,
+  },
+  dayTitle: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  dayHours: {
+    fontSize: 11.5,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  statusPillOpen: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  statusTextOpen: {
+    color: '#059669',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  statusPillBreak: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  statusTextBreak: {
+    color: '#D97706',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  statusPillClosed: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  statusTextClosed: {
+    color: '#DC2626',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+
+  // 4. Guidelines Card
+  guidelinesCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginVertical: 8,
+  },
+  stepNumberBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#E0F2FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  stepNumberText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#0284C7',
+  },
+  stepItemTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#1E293B',
+  },
+  stepItemTitleUrdu: {
+    fontFamily: URDU_FONT,
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  stepItemDesc: {
+    fontSize: 11.5,
+    color: '#64748B',
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  stepItemDescUrdu: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#475569',
+  },
+
+  // 5. Big Call Button
+  bigCallBtn: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#27AE60',
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  bigCallGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  bigCallTitle: {
+    color: COLORS.white,
+    fontSize: 14.5,
+    fontWeight: 'bold',
+  },
+  bigCallSub: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 12,
+    marginTop: 2,
+    fontWeight: '600',
+  },
 });

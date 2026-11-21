@@ -88,15 +88,16 @@ function HeroImageSlider({ customSlides = null }) {
         source={item.resolvedImage}
         style={StyleSheet.absoluteFillObject}
         contentFit="cover"
+        contentPosition="top center"
         transition={200}
         cachePolicy="memory-disk"
         placeholder={PINUM_LOCAL_SLIDE_1}
         placeholderContentFit="cover"
         priority="high"
       />
-      <LinearGradient colors={['transparent', 'rgba(15, 23, 42, 0.88)']} style={styles.slideOverlay}>
-        <Text style={styles.slideTitle}>{item.title}</Text>
-        <Text style={styles.slideDesc}>{item.desc}</Text>
+      <LinearGradient colors={['transparent', 'rgba(15, 23, 42, 0.78)']} style={styles.slideOverlay}>
+        <Text style={styles.slideTitle} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.slideDesc} numberOfLines={2}>{item.desc}</Text>
       </LinearGradient>
     </View>
   );
@@ -149,7 +150,7 @@ function HeroImageSlider({ customSlides = null }) {
 
 const styles = StyleSheet.create({
   sliderContainer: {
-    height: 190,
+    height: 230,
     borderRadius: 20,
     overflow: 'hidden',
     marginBottom: 20,
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
   },
   slideImageContainer: {
     width: SLIDER_WIDTH,
-    height: 190,
+    height: 230,
     position: 'relative',
     justifyContent: 'flex-end',
     backgroundColor: '#1E293B',
@@ -172,22 +173,25 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
-    paddingTop: 36,
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 12,
   },
   slideTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
+    maxWidth: '80%',
     textShadowColor: 'rgba(0, 0, 0, 0.6)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
   slideDesc: {
     color: '#E2E8F0',
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11.5,
+    lineHeight: 15,
+    maxWidth: '80%',
     textShadowColor: 'rgba(0, 0, 0, 0.6)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,

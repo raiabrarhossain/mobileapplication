@@ -46,11 +46,11 @@ app-example
 *.apk
 *.idsig
 *.bundle
-emulator_screen*.png
-current_screen*.png
-screenshot_*.png
+*.png
+*.xml
 *.log
 build_log*.txt
+test_bundle.js
 
 *.iso
 *.zip
