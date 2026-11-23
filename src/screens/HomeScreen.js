@@ -30,10 +30,8 @@ import { getNotifications, getUnreadCount, markAllAsRead, addNotification } from
 import * as Haptics from 'expo-haptics';
 import { fetchAppSlider, fetchNews, fetchHospitalTimings } from '../services/api';
 
-import { PUNJAB_CARD_BASE64, HOME_SAMPLING_BASE64 } from '../assets/bannerAssets';
-
-const HOME_SAMPLING_POSTER_IMG = { uri: HOME_SAMPLING_BASE64 };
-const PUNJAB_HEALTH_CARD_IMG = { uri: PUNJAB_CARD_BASE64 };
+const HOME_SAMPLING_POSTER_IMG = require('../assets/home_sampling_poster.jpg');
+const PUNJAB_HEALTH_CARD_IMG = require('../assets/punjab_health_card.jpg');
 
 const { width } = Dimensions.get('window');
 const SLIDER_WIDTH = width - 40;
@@ -595,7 +593,7 @@ export default function HomeScreen({ navigation, route }) {
               transition={{ duration: 600, delay: 200 }}
               style={styles.urduContainer}
             >
-              <Text style={styles.urduText} numberOfLines={1} adjustsFontSizeToFit>
+              <Text style={styles.urduText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 پینم کینسر ہسپتال
               </Text>
             </MotiView>
