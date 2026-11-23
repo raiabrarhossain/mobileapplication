@@ -30,8 +30,10 @@ import { getNotifications, getUnreadCount, markAllAsRead, addNotification } from
 import * as Haptics from 'expo-haptics';
 import { fetchAppSlider, fetchNews, fetchHospitalTimings } from '../services/api';
 
-const HOME_SAMPLING_POSTER_IMG = require('../assets/home_sampling_poster.jpg');
-const PUNJAB_HEALTH_CARD_IMG = require('../assets/punjab_health_card.jpg');
+import { PUNJAB_CARD_BASE64, HOME_SAMPLING_BASE64 } from '../assets/bannerAssets';
+
+const HOME_SAMPLING_POSTER_IMG = { uri: HOME_SAMPLING_BASE64 };
+const PUNJAB_HEALTH_CARD_IMG = { uri: PUNJAB_CARD_BASE64 };
 
 const { width } = Dimensions.get('window');
 const SLIDER_WIDTH = width - 40;

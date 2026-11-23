@@ -15,7 +15,8 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
 import { Image } from 'expo-image';
-const PUNJAB_HEALTH_CARD_IMG = require('../assets/punjab_health_card.jpg');
+import { PUNJAB_CARD_BASE64 } from '../assets/bannerAssets';
+const PUNJAB_HEALTH_CARD_IMG = { uri: PUNJAB_CARD_BASE64 };
 
 const { width } = Dimensions.get('window');
 
