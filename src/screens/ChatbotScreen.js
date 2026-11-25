@@ -355,7 +355,7 @@ export default function ChatbotScreen({ navigation, route }) {
   const processImageOCR = async (base64Image) => {
     setIsScanModalVisible(false);
     setIsScanning(true);
-    setScanStatus(lang === 'ur' ? 'نسخہ پڑھا جا رہا ہے اور اے آئی انجن پر اپ لوڈ کیا جا رہا ہے...' : 'Reading prescription and uploading to AI OCR space engine...');
+    setScanStatus(lang === 'ur' ? 'نسخہ محفوظ طریقے سے پڑھا جا رہا ہے...' : 'Processing prescription securely on-device...');
 
     // Add initial user scanning message
     const userMsg = {

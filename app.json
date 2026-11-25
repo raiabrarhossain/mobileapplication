@@ -59,18 +59,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "b0a6ec06-37a1-4fa4-a72f-a83dddf59d57"
-      }
-    },
-    "owner": "raiabrar",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "enabled": false,
-      "checkAutomatically": "NEVER"
+      "router": {}
     }
   }
 }
