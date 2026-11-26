@@ -591,8 +591,8 @@ export default function ChatbotScreen({ navigation, route }) {
     return (
       <View style={[styles.messageRow, item.isUser ? styles.rowUser : styles.rowBot]}>
         {!item.isUser && (
-          <View style={styles.botAvatar}>
-            <ChatbotIcon size={30} />
+          <View style={[styles.botAvatar, { backgroundColor: '#071F47', borderWidth: 1.5, borderColor: '#38BDF8', overflow: 'hidden' }]}>
+            <ChatbotIcon size={26} />
           </View>
         )}
         <View style={[styles.bubble, item.isUser ? styles.bubbleUserStyle : styles.bubbleBotStyle]}>
@@ -616,8 +616,8 @@ export default function ChatbotScreen({ navigation, route }) {
           <Text style={styles.backBtnText}>Home</Text>
         </TouchableOpacity>
         <View style={styles.botHeaderInfo}>
-          <View style={styles.avatarContainer}>
-            <ChatbotIcon size={40} />
+          <View style={[styles.avatarContainer, { backgroundColor: '#071F47', borderWidth: 1.5, borderColor: '#38BDF8', overflow: 'hidden' }]}>
+            <ChatbotIcon size={34} />
             <View style={styles.onlineBadge} />
           </View>
           <View>

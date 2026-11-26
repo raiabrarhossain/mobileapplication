@@ -916,25 +916,6 @@ export default function HomeScreen({ navigation, route }) {
         </View>
       </ScrollView>
 
-      {/* Floating Chatbot Button */}
-      <View
-        style={[
-          styles.chatbotFab,
-          {
-            bottom: bottomNavHeight + 15,
-            right: fabRight,
-          }
-        ]}
-      >
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => navigation.navigate('Chatbot', { language: appLanguage })}
-          style={styles.chatbotFabButton}
-        >
-          <ChatbotIcon size={70} />
-        </TouchableOpacity>
-      </View>
-
       <Modal
         visible={isSettingsVisible}
         animationType={isTablet ? 'fade' : 'slide'}
@@ -1553,6 +1534,36 @@ export default function HomeScreen({ navigation, route }) {
         unreadReportsCount={unreadNotifsCount}
         onOpenSettings={() => setIsSettingsVisible(true)}
       />
+
+      {/* Floating Chatbot Button (Placed at top of z-index stack with high elevation) */}
+      <View
+        style={[
+          styles.chatbotFab,
+          {
+            bottom: bottomNavHeight + 16,
+            right: fabRight,
+          }
+        ]}
+        pointerEvents="box-none"
+      >
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => navigation.navigate('Chatbot', { language: appLanguage })}
+          style={styles.chatbotFabButton}
+          accessibilityLabel="PINUM AI Chatbot"
+          accessibilityRole="button"
+        >
+          <LinearGradient
+            colors={['#0F2B5C', '#071F47']}
+            style={styles.chatbotFabGradient}
+          >
+            <ChatbotIcon size={42} />
+            <View style={styles.chatbotSparkleBadge}>
+              <Ionicons name="sparkles" size={11} color="#FDE047" />
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -2539,21 +2550,42 @@ const styles = StyleSheet.create({
   },
   chatbotFab: {
     position: 'absolute',
-    right: 20,
-    width: 80,
-    height: 80,
-    zIndex: 999
+    width: 66,
+    height: 66,
+    elevation: 35,
+    zIndex: 99999,
   },
   chatbotFabButton: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    elevation: 35,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 8,
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+  },
+  chatbotFabGradient: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2.5,
+    borderColor: '#38BDF8',
+  },
+  chatbotSparkleBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#0284C7',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   contactItemRow: {
     flexDirection: 'row',
