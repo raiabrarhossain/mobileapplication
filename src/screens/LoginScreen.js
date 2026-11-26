@@ -298,7 +298,9 @@ export default function LoginScreen({ navigation }) {
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                   style={styles.captchaBox}
                 >
-                  <Text style={styles.captchaText}>{captchaCode}</Text>
+                  <Text style={styles.captchaText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                    {captchaCode}
+                  </Text>
                 </LinearGradient>
 
                 <TouchableOpacity onPress={() => { generateCaptcha(); clearError(); }} style={styles.refreshBtn}>
@@ -308,15 +310,14 @@ export default function LoginScreen({ navigation }) {
                 <TextInput
                   ref={captchaRef}
                   style={[
-                    styles.input,
                     styles.captchaInput,
                     focusedInput === 'captcha' && styles.inputFocused,
                     errorInfo.type === 'captcha' && styles.inputError
                   ]}
                   placeholder="CODE"
-                  placeholderTextColor={COLORS.textLight}
+                  placeholderTextColor="#94A3B8"
                   value={userCaptcha}
-                  onChangeText={(text) => { setUserCaptcha(text); clearError(); }}
+                  onChangeText={(text) => { setUserCaptcha(text.toUpperCase()); clearError(); }}
                   onFocus={() => handleFocus('captcha')}
                   onBlur={() => setFocusedInput(null)}
                   maxLength={5}
@@ -422,7 +423,14 @@ const styles = StyleSheet.create({
   headerTitle: { color: COLORS.white, fontSize: 28, fontWeight: 'bold', letterSpacing: 0.5 },
   headerSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: 2 },
 
-  content: { flex: 1, padding: 30, paddingTop: 25 },
+  content: {
+    flex: 1,
+    padding: 30,
+    paddingTop: 25,
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+  },
   brandName: { fontSize: 18, fontWeight: 'bold', color: COLORS.primary, marginBottom: 5 },
   welcomeText: { fontSize: 14, color: COLORS.textLight, marginBottom: 30 },
 
@@ -446,16 +454,33 @@ const styles = StyleSheet.create({
   passwordInput: { flex: 1, padding: 15, fontSize: 16, color: COLORS.textDark },
   eyeBtn: { padding: 5 },
 
-  captchaRow: { flexDirection: 'row', alignItems: 'center' },
+  captchaRow: { flexDirection: 'row', alignItems: 'center', width: '100%' },
   captchaBox: {
-    width: 105, height: 50,
+    minWidth: 110, height: 52,
     alignItems: 'center', justifyContent: 'center',
-    borderRadius: 12,
+    borderRadius: 12, paddingHorizontal: 8,
     elevation: 3, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2
   },
-  captchaText: { fontSize: 18, fontWeight: 'bold', color: COLORS.white, letterSpacing: 3 },
+  captchaText: { fontSize: 19, fontWeight: 'bold', color: COLORS.white, letterSpacing: 3, includeFontPadding: false, textAlign: 'center' },
   refreshBtn: { padding: 8 },
-  captchaInput: { flex: 1, height: 50, textAlign: 'center', fontSize: 18, fontWeight: 'bold', marginLeft: 8, paddingHorizontal: 8, letterSpacing: 2 },
+  captchaInput: {
+    flex: 1,
+    height: 52,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    paddingVertical: 0,
+    paddingHorizontal: 12,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0F172A',
+    textAlign: 'center',
+    letterSpacing: 2,
+    marginLeft: 8,
+    includeFontPadding: false,
+    textAlignVertical: 'center'
+  },
 
   // ✅ PROFESSIONAL ERROR BANNER STYLES
   errorBanner: {

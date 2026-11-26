@@ -409,7 +409,7 @@ export default function PDFViewerModal({
             </View>
           ) : (
             <WebView
-              originWhitelist={['*']}
+              originWhitelist={['about:blank', 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net']}
               source={{
                 html: renderPdfHtml(),
                 baseUrl: 'https://cdnjs.cloudflare.com',
@@ -418,10 +418,10 @@ export default function PDFViewerModal({
               scalesPageToFit={Platform.OS === 'android'}
               javaScriptEnabled={true}
               domStorageEnabled={true}
-              mixedContentMode="always"
-              allowFileAccess={true}
-              allowFileAccessFromFileURLs={true}
-              allowUniversalAccessFromFileURLs={true}
+              mixedContentMode="never"
+              allowFileAccess={false}
+              allowFileAccessFromFileURLs={false}
+              allowUniversalAccessFromFileURLs={false}
               allowsInlineMediaPlayback={true}
               startInLoadingState={true}
               onMessage={handleWebViewMessage}

@@ -133,7 +133,7 @@ const SlideItem = memo(({ item, index, itemWidth, itemHeight }) => {
         source={source}
         style={StyleSheet.absoluteFillObject}
         contentFit="cover"
-        contentPosition="center"
+        contentPosition="top"
         transition={200}
         cachePolicy="memory-disk"
         placeholder={fallback}
@@ -155,7 +155,7 @@ function HeroImageSlider({ customSlides = null }) {
   const { width: windowWidth } = useWindowDimensions();
   const isTablet = windowWidth >= 600;
   const sliderWidth = Math.min(windowWidth - (isTablet ? 48 : 40), 860);
-  const sliderHeight = isTablet ? 300 : 230;
+  const sliderHeight = isTablet ? 340 : 220;
 
   const rawSlides = customSlides && customSlides.length > 0 ? customSlides : DEFAULT_SLIDES;
   const slides = rawSlides.map((s, idx) => ({

@@ -19,7 +19,8 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  useWindowDimensions
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomNavBar from '../components/BottomNavBar';
@@ -29,6 +30,7 @@ import { fetchLabRates } from '../services/api';
 // Cohesive App Brand Palette matching HomeScreen, LoginScreen & Patient Portal
 const GRADIENT_COLORS = ['#2D9CDB', '#8E44AD'];
 const CARD_GRADIENT = ['#2D9CDB', '#1976D2'];
+const DOWNLOAD_GREEN_GRADIENT = ['#10B981', '#059669'];
 
 const COLORS = {
   primary: '#2D9CDB',
@@ -184,6 +186,8 @@ const getDepartmentInfo = (rawDept) => {
 
 export default function LabRatesScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  const isTablet = windowWidth >= 600;
   const [rates, setRates] = useState([]);
   const [filteredRates, setFilteredRates] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -860,7 +864,7 @@ export default function LabRatesScreen({ navigation, route }) {
 
       {/* INTERACTIVE FLOATING ESTIMATOR WITH SELECTION & ADD-ONS */}
       {selectedTests.length > 0 && !isKeyboardVisible && (
-        <View style={[styles.floatingEstimatorCard, { bottom: 58 + (insets.bottom > 0 ? insets.bottom : 6) }]}>
+        <View style={[styles.floatingEstimatorCard, isTablet && styles.floatingEstimatorCardTablet, { bottom: 58 + (insets.bottom > 0 ? insets.bottom : 6) }]}>
           {/* Top Row: Selected Tests Count & Clear */}
           <View style={styles.floatingTopRow}>
             <View style={styles.floatingTitleWrap}>
@@ -957,9 +961,9 @@ export default function LabRatesScreen({ navigation, route }) {
       )}
 
       {/* DIGITAL RATE SLIP BOTTOM SHEET MODAL */}
-      <Modal visible={showSlip} animationType="slide" transparent={true} onRequestClose={() => setShowSlip(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.slipContainer}>
+      <Modal visible={showSlip} animationType={isTablet ? 'fade' : 'slide'} transparent={true} onRequestClose={() => setShowSlip(false)}>
+        <View style={[styles.modalOverlay, isTablet && styles.modalOverlayTablet]}>
+          <View style={[styles.slipContainer, isTablet && styles.slipContainerTablet, { paddingBottom: 22 + (insets.bottom > 0 ? insets.bottom : 12) }]}>
             {/* Sheet Drag Handle Indicator */}
             <View style={styles.sheetHandle} />
 
@@ -1066,7 +1070,7 @@ export default function LabRatesScreen({ navigation, route }) {
                 activeOpacity={0.88}
               >
                 <LinearGradient
-                  colors={GRADIENT_COLORS}
+                  colors={DOWNLOAD_GREEN_GRADIENT}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.downloadGradient}
@@ -1637,6 +1641,13 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderColor: 'rgba(255, 255, 255, 0.15)',
   },
+  floatingEstimatorCardTablet: {
+    maxWidth: 680,
+    alignSelf: 'center',
+    left: 'auto',
+    right: 'auto',
+    width: '92%',
+  },
   floatingTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1874,6 +1885,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.darkOverlay,
     justifyContent: 'flex-end',
   },
+  modalOverlayTablet: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
   slipContainer: {
     backgroundColor: COLORS.cardBg,
     borderTopLeftRadius: 28,
@@ -1883,6 +1899,13 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     maxHeight: '86%',
     elevation: 25,
+  },
+  slipContainerTablet: {
+    width: '100%',
+    maxWidth: 580,
+    borderRadius: 24,
+    alignSelf: 'center',
+    marginBottom: 20,
   },
   sheetHandle: {
     width: 36,
@@ -1937,7 +1960,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  slipScroll: { maxHeight: 250 },
+  slipScroll: { maxHeight: 220, flexShrink: 1 },
   slipRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
