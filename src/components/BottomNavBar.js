@@ -79,88 +79,90 @@ function BottomNavBar({
 
   return (
     <View style={[styles.container, { paddingBottom: bottomPadding }]}>
-      {/* Home Tab */}
-      <TouchableOpacity
-        activeOpacity={0.75}
-        onPress={handlePressHome}
-        style={styles.navItem}
-      >
-        <View style={[styles.iconWrap, activeTab === 'home' && styles.activePill]}>
-          <Ionicons
-            name={activeTab === 'home' ? 'home' : 'home-outline'}
-            size={22}
-            color={activeTab === 'home' ? '#0B2265' : '#8A94A6'}
-          />
-          {activeTab === 'home' && <View style={styles.activeDot} />}
-        </View>
-        <Text style={[styles.navLabel, activeTab === 'home' && styles.activeLabel]}>
-          {t.home}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.innerNav}>
+        {/* Home Tab */}
+        <TouchableOpacity
+          activeOpacity={0.75}
+          onPress={handlePressHome}
+          style={styles.navItem}
+        >
+          <View style={[styles.iconWrap, activeTab === 'home' && styles.activePill]}>
+            <Ionicons
+              name={activeTab === 'home' ? 'home' : 'home-outline'}
+              size={22}
+              color={activeTab === 'home' ? '#0B2265' : '#8A94A6'}
+            />
+            {activeTab === 'home' && <View style={styles.activeDot} />}
+          </View>
+          <Text style={[styles.navLabel, activeTab === 'home' && styles.activeLabel]}>
+            {t.home}
+          </Text>
+        </TouchableOpacity>
 
-      {/* Reports Tab */}
-      <TouchableOpacity
-        activeOpacity={0.75}
-        onPress={handlePressReports}
-        style={styles.navItem}
-      >
-        <View style={[styles.iconWrap, activeTab === 'reports' && styles.activePill]}>
-          <Ionicons
-            name={activeTab === 'reports' ? 'document-text' : 'document-text-outline'}
-            size={22}
-            color={activeTab === 'reports' ? '#0B2265' : '#8A94A6'}
-          />
-          {unreadReportsCount > 0 && (
-            <View style={styles.reportBadge}>
-              <Text style={styles.reportBadgeText}>
-                {unreadReportsCount > 9 ? '9+' : unreadReportsCount}
-              </Text>
-            </View>
-          )}
-          {activeTab === 'reports' && <View style={styles.activeDot} />}
-        </View>
-        <Text style={[styles.navLabel, activeTab === 'reports' && styles.activeLabel]}>
-          {t.reports}
-        </Text>
-      </TouchableOpacity>
+        {/* Reports Tab */}
+        <TouchableOpacity
+          activeOpacity={0.75}
+          onPress={handlePressReports}
+          style={styles.navItem}
+        >
+          <View style={[styles.iconWrap, activeTab === 'reports' && styles.activePill]}>
+            <Ionicons
+              name={activeTab === 'reports' ? 'document-text' : 'document-text-outline'}
+              size={22}
+              color={activeTab === 'reports' ? '#0B2265' : '#8A94A6'}
+            />
+            {unreadReportsCount > 0 && (
+              <View style={styles.reportBadge}>
+                <Text style={styles.reportBadgeText}>
+                  {unreadReportsCount > 9 ? '9+' : unreadReportsCount}
+                </Text>
+              </View>
+            )}
+            {activeTab === 'reports' && <View style={styles.activeDot} />}
+          </View>
+          <Text style={[styles.navLabel, activeTab === 'reports' && styles.activeLabel]}>
+            {t.reports}
+          </Text>
+        </TouchableOpacity>
 
-      {/* Lab Reports / Rates Tab */}
-      <TouchableOpacity
-        activeOpacity={0.75}
-        onPress={handlePressLab}
-        style={styles.navItem}
-      >
-        <View style={[styles.iconWrap, activeTab === 'lab' && styles.activePill]}>
-          <MaterialCommunityIcons
-            name={activeTab === 'lab' ? 'flask' : 'flask-outline'}
-            size={22}
-            color={activeTab === 'lab' ? '#0B2265' : '#8A94A6'}
-          />
-          {activeTab === 'lab' && <View style={styles.activeDot} />}
-        </View>
-        <Text style={[styles.navLabel, activeTab === 'lab' && styles.activeLabel]}>
-          {t.lab}
-        </Text>
-      </TouchableOpacity>
+        {/* Lab Reports / Rates Tab */}
+        <TouchableOpacity
+          activeOpacity={0.75}
+          onPress={handlePressLab}
+          style={styles.navItem}
+        >
+          <View style={[styles.iconWrap, activeTab === 'lab' && styles.activePill]}>
+            <MaterialCommunityIcons
+              name={activeTab === 'lab' ? 'flask' : 'flask-outline'}
+              size={22}
+              color={activeTab === 'lab' ? '#0B2265' : '#8A94A6'}
+            />
+            {activeTab === 'lab' && <View style={styles.activeDot} />}
+          </View>
+          <Text style={[styles.navLabel, activeTab === 'lab' && styles.activeLabel]}>
+            {t.lab}
+          </Text>
+        </TouchableOpacity>
 
-      {/* Settings Tab */}
-      <TouchableOpacity
-        activeOpacity={0.75}
-        onPress={handlePressSettings}
-        style={styles.navItem}
-      >
-        <View style={[styles.iconWrap, activeTab === 'settings' && styles.activePill]}>
-          <Ionicons
-            name={activeTab === 'settings' ? 'settings' : 'settings-outline'}
-            size={22}
-            color={activeTab === 'settings' ? '#0B2265' : '#8A94A6'}
-          />
-          {activeTab === 'settings' && <View style={styles.activeDot} />}
-        </View>
-        <Text style={[styles.navLabel, activeTab === 'settings' && styles.activeLabel]}>
-          {t.settings}
-        </Text>
-      </TouchableOpacity>
+        {/* Settings Tab */}
+        <TouchableOpacity
+          activeOpacity={0.75}
+          onPress={handlePressSettings}
+          style={styles.navItem}
+        >
+          <View style={[styles.iconWrap, activeTab === 'settings' && styles.activePill]}>
+            <Ionicons
+              name={activeTab === 'settings' ? 'settings' : 'settings-outline'}
+              size={22}
+              color={activeTab === 'settings' ? '#0B2265' : '#8A94A6'}
+            />
+            {activeTab === 'settings' && <View style={styles.activeDot} />}
+          </View>
+          <Text style={[styles.navLabel, activeTab === 'settings' && styles.activeLabel]}>
+            {t.settings}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -172,10 +174,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#EBF0F6',
     borderTopLeftRadius: 22,
@@ -186,6 +184,15 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -4 },
     shadowRadius: 14,
     zIndex: 100,
+  },
+  innerNav: {
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingTop: 8,
   },
   navItem: {
     flex: 1,

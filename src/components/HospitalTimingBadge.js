@@ -206,7 +206,7 @@ function HospitalTimingBadge({ timings, language = 'en' }) {
         >
           {/* Animated Analog Clock */}
           <View style={styles.clockWrapper}>
-            <Svg width={CLOCK_SIZE} height={CLOCK_SIZE}>
+            <Svg width={CLOCK_SIZE} height={CLOCK_SIZE} viewBox={`0 0 ${CLOCK_SIZE} ${CLOCK_SIZE}`}>
               {/* Dial Background with Glowing Status Rim */}
               <Circle
                 cx={CX}

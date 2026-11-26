@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
-import { View, Text, StyleSheet, Dimensions, FlatList } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions, FlatList } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
@@ -10,9 +10,6 @@ import {
   SLIDE_3_BASE64,
   SLIDE_4_BASE64,
 } from '../assets/sliderAssets';
-
-const { width } = Dimensions.get('window');
-const SLIDER_WIDTH = width - 40;
 
 const PINUM_LOCAL_SLIDE_1 = { uri: SLIDE_1_BASE64 };
 const PINUM_LOCAL_SLIDE_2 = { uri: SLIDE_2_BASE64 };
@@ -118,7 +115,7 @@ const resolveSlideImage = (item, index) => {
   return fallback;
 };
 
-const SlideItem = memo(({ item, index }) => {
+const SlideItem = memo(({ item, index, itemWidth, itemHeight }) => {
   const fallback = getFallbackForSlide(item, index);
   const [source, setSource] = useState(item.resolvedImage || fallback);
 
@@ -127,7 +124,7 @@ const SlideItem = memo(({ item, index }) => {
   }, [item.resolvedImage]);
 
   return (
-    <View style={styles.slideImageContainer}>
+    <View style={[styles.slideImageContainer, { width: itemWidth, height: itemHeight }]}>
       <LinearGradient
         colors={['#1E293B', '#0F172A']}
         style={StyleSheet.absoluteFillObject}
@@ -155,6 +152,11 @@ const SlideItem = memo(({ item, index }) => {
 });
 
 function HeroImageSlider({ customSlides = null }) {
+  const { width: windowWidth } = useWindowDimensions();
+  const isTablet = windowWidth >= 600;
+  const sliderWidth = Math.min(windowWidth - (isTablet ? 48 : 40), 860);
+  const sliderHeight = isTablet ? 300 : 230;
+
   const rawSlides = customSlides && customSlides.length > 0 ? customSlides : DEFAULT_SLIDES;
   const slides = rawSlides.map((s, idx) => ({
     ...s,
@@ -186,12 +188,12 @@ function HeroImageSlider({ customSlides = null }) {
   }, [slides.length]);
 
   const renderPictureSlide = ({ item, index }) => (
-    <SlideItem item={item} index={index} />
+    <SlideItem item={item} index={index} itemWidth={sliderWidth} itemHeight={sliderHeight} />
   );
 
   const getItemLayout = (_, index) => ({
-    length: SLIDER_WIDTH,
-    offset: SLIDER_WIDTH * index,
+    length: sliderWidth,
+    offset: sliderWidth * index,
     index,
   });
 
@@ -200,7 +202,7 @@ function HeroImageSlider({ customSlides = null }) {
       from={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: 'timing', duration: 400 }}
-      style={styles.sliderContainer}
+      style={[styles.sliderContainer, { width: sliderWidth, height: sliderHeight }]}
     >
       <FlatList
         ref={flatListRef}
@@ -216,7 +218,7 @@ function HeroImageSlider({ customSlides = null }) {
         windowSize={3}
         removeClippedSubviews
         onMomentumScrollEnd={(event) => {
-          const newIndex = Math.round(event.nativeEvent.contentOffset.x / SLIDER_WIDTH);
+          const newIndex = Math.round(event.nativeEvent.contentOffset.x / sliderWidth);
           if (newIndex >= 0 && newIndex < slides.length) {
             setCurrentIndex(newIndex);
           }
@@ -237,7 +239,7 @@ function HeroImageSlider({ customSlides = null }) {
 
 const styles = StyleSheet.create({
   sliderContainer: {
-    height: 230,
+    alignSelf: 'center',
     borderRadius: 20,
     overflow: 'hidden',
     marginBottom: 20,
@@ -249,8 +251,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   slideImageContainer: {
-    width: SLIDER_WIDTH,
-    height: 230,
     position: 'relative',
     justifyContent: 'flex-end',
     backgroundColor: '#1E293B',

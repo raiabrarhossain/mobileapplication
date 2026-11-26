@@ -18,7 +18,8 @@ import {
   View,
   RefreshControl,
   ActivityIndicator,
-  Animated
+  Animated,
+  useWindowDimensions
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChatbotIcon from '../components/ChatbotIcon';
@@ -356,6 +357,9 @@ export default function HomeScreen({ navigation, route }) {
   const t = TRANSLATIONS[appLanguage] || TRANSLATIONS.en;
 
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  const isTablet = windowWidth >= 600;
+  const fabRight = isTablet ? Math.max(20, Math.floor((windowWidth - 840) / 2) + 20) : 20;
   const bottomNavHeight = 65 + (insets.bottom > 0 ? insets.bottom : 15);
   const user = route.params?.user || null;
 
@@ -493,6 +497,7 @@ export default function HomeScreen({ navigation, route }) {
         end={{ x: 1, y: 1 }}
         style={styles.header}
       >
+        <View style={[styles.responsiveContainer, isTablet && styles.responsiveContainerTablet]}>
         <View style={styles.headerTop}>
           <MotiView
             from={{ scale: 0.5, opacity: 0 }}
@@ -607,6 +612,7 @@ export default function HomeScreen({ navigation, route }) {
 
           <HospitalTimingBadge timings={hospitalTimings} language={appLanguage} />
         </View>
+        </View>
       </LinearGradient>
 
       <ScrollView
@@ -621,6 +627,7 @@ export default function HomeScreen({ navigation, route }) {
           />
         }
       >
+        <View style={[styles.responsiveContainer, isTablet && styles.responsiveContainerTablet]}>
         <HeroImageSlider customSlides={sliderData} />
 
         <MotiView
@@ -906,6 +913,7 @@ export default function HomeScreen({ navigation, route }) {
             onPress={() => navigation.navigate('Appointment', { language: appLanguage })}
           />
         </View>
+        </View>
       </ScrollView>
 
       {/* Floating Chatbot Button */}
@@ -914,6 +922,7 @@ export default function HomeScreen({ navigation, route }) {
           styles.chatbotFab,
           {
             bottom: bottomNavHeight + 15,
+            right: fabRight,
           }
         ]}
       >
@@ -928,14 +937,14 @@ export default function HomeScreen({ navigation, route }) {
 
       <Modal
         visible={isSettingsVisible}
-        animationType="slide"
+        animationType={isTablet ? 'fade' : 'slide'}
         transparent={true}
         onRequestClose={() => {
           setIsSettingsVisible(false);
         }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '90%' }]}>
+        <View style={[styles.modalOverlay, isTablet && styles.modalOverlayTablet]}>
+          <View style={[styles.modalContent, isTablet && styles.modalContentTablet, { maxHeight: '90%' }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>App Settings</Text>
 
@@ -1040,14 +1049,14 @@ export default function HomeScreen({ navigation, route }) {
       {/* Custom Contact Modal */}
       <Modal
         visible={isContactVisible}
-        animationType="slide"
+        animationType={isTablet ? 'fade' : 'slide'}
         transparent={true}
         onRequestClose={() => {
           setIsContactVisible(false);
         }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '90%' }]}>
+        <View style={[styles.modalOverlay, isTablet && styles.modalOverlayTablet]}>
+          <View style={[styles.modalContent, isTablet && styles.modalContentTablet, { maxHeight: '90%' }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Contact PINUM</Text>
               <TouchableOpacity onPress={() => setIsContactVisible(false)} style={styles.closeBtn}>
@@ -1133,7 +1142,7 @@ export default function HomeScreen({ navigation, route }) {
             from={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: 'spring', damping: 15 }}
-            style={styles.comingSoonCard}
+            style={[styles.comingSoonCard, isTablet && { maxWidth: 460 }]}
           >
             <LinearGradient
               colors={GRADIENT_COLORS}
@@ -1182,12 +1191,12 @@ export default function HomeScreen({ navigation, route }) {
       {/* Home Sampling Full Details Modal */}
       <Modal
         visible={isHomeSamplingVisible}
-        animationType="slide"
+        animationType={isTablet ? 'fade' : 'slide'}
         transparent={true}
         onRequestClose={() => setIsHomeSamplingVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '92%', paddingBottom: 12 }]}>
+        <View style={[styles.modalOverlay, isTablet && styles.modalOverlayTablet]}>
+          <View style={[styles.modalContent, isTablet && styles.modalContentTablet, { maxHeight: '92%', paddingBottom: 12 }]}>
             {/* Modal Header */}
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
@@ -1372,12 +1381,12 @@ export default function HomeScreen({ navigation, route }) {
       {/* NOTIFICATIONS & ALERTS MODAL */}
       <Modal
         visible={isNotificationsModalVisible}
-        animationType="slide"
+        animationType={isTablet ? 'fade' : 'slide'}
         transparent={true}
         onRequestClose={() => setIsNotificationsModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '85%' }]}>
+        <View style={[styles.modalOverlay, isTablet && styles.modalOverlayTablet]}>
+          <View style={[styles.modalContent, isTablet && styles.modalContentTablet, { maxHeight: '85%' }]}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={styles.notifHeaderIcon}>
@@ -2412,10 +2421,22 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3
   },
+  responsiveContainer: {
+    width: '100%',
+  },
+  responsiveContainerTablet: {
+    maxWidth: 840,
+    alignSelf: 'center',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: COLORS.darkOverlay,
     justifyContent: 'flex-end'
+  },
+  modalOverlayTablet: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
   },
   modalContent: {
     backgroundColor: COLORS.bg,
@@ -2424,6 +2445,12 @@ const styles = StyleSheet.create({
     padding: 25,
     paddingBottom: 40,
     elevation: 10
+  },
+  modalContentTablet: {
+    width: '100%',
+    maxWidth: 580,
+    borderRadius: 24,
+    alignSelf: 'center',
   },
   modalHeader: {
     flexDirection: 'row',
