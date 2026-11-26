@@ -19,6 +19,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Animated,
+  Easing,
   useWindowDimensions
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -197,6 +198,52 @@ export default function HomeScreen({ navigation, route }) {
   const [toastMessage, setToastMessage] = useState('');
   const [toastTitle, setToastTitle] = useState('');
   const toastTimeoutRef = useRef(null);
+
+  // Floating AI Robot Animation (Hover floating & lifelike head movement)
+  const botFloatAnim = useRef(new Animated.Value(0)).current;
+  const botTiltAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const floatLoop = Animated.loop(
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(botFloatAnim, {
+            toValue: -8,
+            duration: 1800,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+          Animated.timing(botTiltAnim, {
+            toValue: 1,
+            duration: 1800,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.timing(botFloatAnim, {
+            toValue: 0,
+            duration: 1800,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+          Animated.timing(botTiltAnim, {
+            toValue: -0.6,
+            duration: 1800,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+        ]),
+      ])
+    );
+    floatLoop.start();
+    return () => floatLoop.stop();
+  }, []);
+
+  const botRotation = botTiltAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ['-5deg', '0deg', '5deg'],
+  });
 
   const showToast = (title, message) => {
     if (toastTimeoutRef.current) {
@@ -1535,33 +1582,34 @@ export default function HomeScreen({ navigation, route }) {
         onOpenSettings={() => setIsSettingsVisible(true)}
       />
 
-      {/* Floating Chatbot Button (Placed at top of z-index stack with high elevation) */}
+      {/* Floating Animated AI Chatbot (Transparent without circle background, larger & lifelike head movement) */}
       <View
         style={[
           styles.chatbotFab,
           {
-            bottom: bottomNavHeight + 16,
+            bottom: bottomNavHeight + 20,
             right: fabRight,
           }
         ]}
         pointerEvents="box-none"
       >
         <TouchableOpacity
-          activeOpacity={0.85}
+          activeOpacity={0.82}
           onPress={() => navigation.navigate('Chatbot', { language: appLanguage })}
           style={styles.chatbotFabButton}
           accessibilityLabel="PINUM AI Chatbot"
           accessibilityRole="button"
         >
-          <LinearGradient
-            colors={['#0F2B5C', '#071F47']}
-            style={styles.chatbotFabGradient}
+          <Animated.View
+            style={{
+              transform: [
+                { translateY: botFloatAnim },
+                { rotate: botRotation },
+              ],
+            }}
           >
-            <ChatbotIcon size={42} />
-            <View style={styles.chatbotSparkleBadge}>
-              <Ionicons name="sparkles" size={11} color="#FDE047" />
-            </View>
-          </LinearGradient>
+            <ChatbotIcon size={90} animated={true} />
+          </Animated.View>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -2550,20 +2598,16 @@ const styles = StyleSheet.create({
   },
   chatbotFab: {
     position: 'absolute',
-    width: 66,
-    height: 66,
+    width: 80,
+    height: 102,
     elevation: 35,
     zIndex: 99999,
   },
   chatbotFabButton: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
-    elevation: 35,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
+    width: 80,
+    height: 102,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   chatbotFabGradient: {
     width: 66,
