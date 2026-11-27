@@ -33,8 +33,8 @@ const COLORS = {
 };
 
 const URDU_FONT = 'JameelNooriNastaleeq';
-const RECEPTION_PHONE_DISPLAY = '(+92)-41-9210171-77';
-const RECEPTION_TEL_URL = 'tel:+92419210171';
+const RECEPTION_PHONE_DISPLAY = '041-858170';
+const RECEPTION_TEL_URL = 'tel:+9241858170';
 const HELPLINE_PHONE = '0336-1634118';
 
 export default function AppointmentScreen({ navigation, route }) {
@@ -174,7 +174,9 @@ export default function AppointmentScreen({ navigation, route }) {
               </View>
 
               <View style={styles.contactTextCol}>
-                <Text style={styles.contactItemLabel}>PHONE / RECEPTION</Text>
+                <Text style={styles.contactItemLabel}>
+                  {isUrdu ? 'ڈائریکٹ اپائنٹمنٹ ڈیسک' : 'DIRECT APPOINTMENT DESK'}
+                </Text>
                 <Text style={styles.contactItemValue}>{RECEPTION_PHONE_DISPLAY}</Text>
               </View>
 
@@ -187,8 +189,8 @@ export default function AppointmentScreen({ navigation, route }) {
               <Ionicons name="checkmark-circle" size={14} color={COLORS.success} />
               <Text style={styles.subCallHintText}>
                 {isUrdu
-                  ? 'ایک ہی وقت میں 7 لائنیں دستیاب ہیں (041-9210171 تا 77)'
-                  : '7 Exchange telephone lines available simultaneously'}
+                  ? 'او پی ڈی ڈاکٹر معائنے اور وقت کے لیے براہ راست رابطہ کریں'
+                  : 'Direct hospital line for doctor consultations and appointment booking'}
               </Text>
             </View>
           </View>
@@ -241,7 +243,7 @@ export default function AppointmentScreen({ navigation, route }) {
           <View style={styles.scheduleRow}>
             <View style={styles.dayCol}>
               <Text style={styles.dayTitle}>{isUrdu ? 'اتوار (Sunday)' : 'Sunday'}</Text>
-              <Text style={styles.dayHours}>{isUrdu ? 'او پی ڈی بند • ایمرجنسی 24 گھنٹے' : 'OPD Closed • Emergency 24/7'}</Text>
+              <Text style={styles.dayHours}>{isUrdu ? 'اتوار کو ہسپتال و او پی ڈی بند رہتی ہے' : 'Hospital & OPD Closed on Sunday'}</Text>
             </View>
             <View style={styles.statusPillClosed}>
               <Text style={styles.statusTextClosed}>{isUrdu ? 'اتوار بند' : 'Closed'}</Text>

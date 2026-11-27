@@ -62,3 +62,5 @@ sanitize_official_docs.py
 new_bundle.js
 *.hbc
 rebuild_and_install.ps1
+src/assets/docs/
+

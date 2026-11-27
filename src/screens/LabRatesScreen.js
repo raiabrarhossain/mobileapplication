@@ -294,6 +294,17 @@ export default function LabRatesScreen({ navigation, route }) {
         canonicalKey = upperClean.replace(/[^A-Z0-9]/g, '');
       }
 
+      const isRadOrNuclear = 
+        upperClean.includes('SCAN') || upperClean.includes('XRAY') || upperClean.includes('X-RAY') ||
+        upperClean.includes('CT') || upperClean.includes('MRI') || upperClean.includes('ULTRASOUND') ||
+        upperClean.includes('USG') || upperClean.includes('MAMMO') || upperClean.includes('NUCLEAR') ||
+        upperClean.includes('PET') || upperClean.includes('ISOTOPE') || upperClean.includes('SPECT') ||
+        upperClean.includes('THYROID') || upperClean.includes('BONE') ||
+        String(item.department || '').toUpperCase().includes('RAD') ||
+        String(item.department || '').toUpperCase().includes('NM') ||
+        String(item.department || '').toUpperCase().includes('NUCLEAR') ||
+        String(item.department || '').toUpperCase().includes('SCAN');
+
       if (canonicalMap.has(canonicalKey)) {
         const existing = canonicalMap.get(canonicalKey);
         canonicalMap.set(canonicalKey, {
@@ -301,13 +312,14 @@ export default function LabRatesScreen({ navigation, route }) {
           serviceName: canonicalName || existing.serviceName,
           department: existing.department || item.department || '',
           rate: existing.rate || item.rate || 0,
-          isAppointmentReq: existing.isAppointmentReq || item.isAppointmentReq || false,
+          isAppointmentReq: isRadOrNuclear ? true : (existing.isAppointmentReq || item.isAppointmentReq || false),
         });
       } else {
         canonicalMap.set(canonicalKey, {
           ...item,
           serviceName: canonicalName,
           department: item.department ? String(item.department).trim() : '',
+          isAppointmentReq: isRadOrNuclear ? true : Boolean(item.isAppointmentReq),
         });
       }
     }
@@ -481,7 +493,8 @@ export default function LabRatesScreen({ navigation, route }) {
           <head>
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
             <style>
-              body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 32px; background-color: #ffffff; direction: ${lang === 'ur' ? 'rtl' : 'ltr'}; text-align: ${lang === 'ur' ? 'right' : 'left'}; color: #1E293B; }
+              @page { size: A4 portrait; margin: 10mm; }
+              body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 16px; background-color: #ffffff; direction: ${lang === 'ur' ? 'rtl' : 'ltr'}; text-align: ${lang === 'ur' ? 'right' : 'left'}; color: #1E293B; }
               .header { text-align: center; margin-bottom: 24px; border-bottom: 3px double #2D9CDB; padding-bottom: 16px; }
               h1 { color: #1E3A8A; font-size: 22px; margin: 0; letter-spacing: 0.5px; }
               h3 { color: #64748B; font-size: 13px; margin-top: 6px; font-weight: 600; }
@@ -662,9 +675,16 @@ export default function LabRatesScreen({ navigation, route }) {
   );
 
   const renderItem = useCallback(({ item }) => {
-    const isWalkIn = !item.isAppointmentReq;
-    const isSelected = selectedTests.some(selected => selected.serviceName === item.serviceName);
     const deptInfo = getDepartmentInfo(item.department);
+    const isRadOrNuclear = 
+      deptInfo.code === 'RAD' || 
+      deptInfo.code === 'NM' || 
+      item.isAppointmentReq ||
+      /RAD|SCAN|XRAY|X-RAY|CT|MRI|ULTRASOUND|USG|MAMMO|PET|NUCLEAR|SPECT|ISOTOPE|THYROID|BONE SCAN/i.test(item.serviceName || '') ||
+      /RAD|SCAN|XRAY|X-RAY|CT|MRI|ULTRASOUND|USG|MAMMO|PET|NUCLEAR|SPECT|ISOTOPE/i.test(item.department || '');
+
+    const isWalkIn = !isRadOrNuclear;
+    const isSelected = selectedTests.some(selected => selected.serviceName === item.serviceName);
 
     return (
       <TouchableOpacity

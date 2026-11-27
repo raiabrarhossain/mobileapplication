@@ -79,6 +79,7 @@ const TRANSLATIONS = {
     contact: 'Contact',
     gallery: 'Gallery',
     appointment: 'Appointment',
+    itTeam: 'IT Team',
     settings: 'App Settings',
     darkMode: 'Dark Mode',
     notifications: 'Push Notifications',
@@ -128,6 +129,7 @@ const TRANSLATIONS = {
     contact: 'رابطہ کریں',
     gallery: 'گیلری',
     appointment: 'اپائنٹمنٹ',
+    itTeam: 'آئی ٹی ٹیم',
     settings: 'ایپ سیٹنگز',
     darkMode: 'ڈارک موڈ',
     notifications: 'پش نوٹیفکیشن',
@@ -959,6 +961,13 @@ export default function HomeScreen({ navigation, route }) {
             label={t.appointment}
             onPress={() => navigation.navigate('Appointment', { language: appLanguage })}
           />
+
+          <ImageGridItem
+            index={9}
+            imageUri="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=600&auto=format&fit=crop"
+            label={t.itTeam}
+            onPress={() => navigation.navigate('ITTeam', { language: appLanguage })}
+          />
         </View>
         </View>
       </ScrollView>
@@ -1628,6 +1637,7 @@ const ImageGridItem = ({ imageUri, label, onPress, index }) => {
       case 6: return { lib: 'Ionicons', name: 'chatbubbles-outline', color: '#2C3E50', grad: ['#ECEFF1', '#CFD8DC'] };      // Contact (Slate)
       case 7: return { lib: 'Ionicons', name: 'images-outline', color: '#E67E22', grad: ['#FBE9E7', '#FFCCBC'] };    // Gallery (Orange)
       case 8: return { lib: 'Ionicons', name: 'calendar-outline', color: '#16A085', grad: ['#E0F7FA', '#B2EBF2'] }; // Appointment (Cyan)
+      case 9: return { lib: 'Ionicons', name: 'hardware-chip-outline', color: '#0284C7', grad: ['#E0F2FE', '#BAE6FD'] }; // IT Team (Blue)
       default: return { lib: 'Ionicons', name: 'grid-outline', color: '#7f8c8d', grad: ['#F5F5F5', '#E0E0E0'] };
     }
   };
@@ -3085,5 +3095,140 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#E74C3C',
     marginLeft: 6,
-  }
+  },
+  itSectionCard: {
+    marginTop: 22,
+    marginBottom: 20,
+    borderRadius: 18,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  itSectionGrad: {
+    padding: 18,
+  },
+  itHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  itBadgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  itBadgeText: {
+    color: '#38BDF8',
+    fontSize: 10.5,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  itLiveStatusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.18)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  itStatusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#34D399',
+    marginRight: 5,
+  },
+  itStatusText: {
+    color: '#34D399',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  itTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  itSubtitle: {
+    color: '#94A3B8',
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  itPillarsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  itPillarCard: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+  },
+  itPillarIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  itPillarTitle: {
+    color: '#F8FAFC',
+    fontSize: 10.5,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  itPillarSub: {
+    color: '#94A3B8',
+    fontSize: 9.5,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  itFooterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    paddingTop: 12,
+  },
+  itContactLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  itContactText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    marginLeft: 4,
+  },
+  itContactDivider: {
+    color: '#475569',
+    marginHorizontal: 6,
+  },
+  itContactBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  itContactBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
 });

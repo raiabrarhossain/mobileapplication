@@ -407,17 +407,17 @@ function HospitalTimingBadge({ timings, language = 'en' }) {
                 </View>
               </View>
 
-              {/* Emergency */}
-              <View style={[styles.scheduleRow, styles.emergencyRow]}>
-                <View style={[styles.scheduleIconWrap, { backgroundColor: '#FEE2E2' }]}>
-                  <Ionicons name="medical" size={17} color="#DC2626" />
+              {/* Sunday & Holiday Notice */}
+              <View style={[styles.scheduleRow, { borderBottomWidth: 0 }]}>
+                <View style={[styles.scheduleIconWrap, { backgroundColor: '#F1F5F9' }]}>
+                  <Ionicons name="information-circle-outline" size={17} color="#475569" />
                 </View>
                 <View style={styles.scheduleTextWrap}>
-                  <Text style={styles.emergencyDay}>
-                    {isUrdu ? 'ایمرجنسی و داخل مریض' : 'Emergency & Inpatient Care'}
+                  <Text style={styles.scheduleDay}>
+                    {isUrdu ? 'سرکاری تعطیلات و اتوار' : 'Sundays & Public Holidays'}
                   </Text>
-                  <Text style={styles.emergencyHours}>
-                    {isUrdu ? '24 گھنٹے 7 دن فعال (24/7)' : '24 Hours / 7 Days Active'}
+                  <Text style={styles.scheduleHours}>
+                    {isUrdu ? 'ہسپتال او پی ڈی اور کلینکس بند رہتے ہیں' : 'OPD & Clinics remain closed'}
                   </Text>
                 </View>
               </View>

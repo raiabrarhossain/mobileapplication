@@ -22,7 +22,7 @@ Write-Host "`n3. Extracting and patching AndroidManifest to permanently kill EAS
 [System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression') | Out-Null
 [System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem') | Out-Null
 
-$srcApk = 'pinumapp.apk'
+$srcApk = if (Test-Path 'pinumapp_local.apk') { 'pinumapp_local.apk' } else { 'pinumapp.apk' }
 $zip = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $srcApk).Path)
 $entry = $zip.GetEntry('AndroidManifest.xml')
 $stream = $entry.Open()

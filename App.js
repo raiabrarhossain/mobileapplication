@@ -22,6 +22,7 @@ import GalleryScreen from './src/screens/GalleryScreen';
 import AppointmentScreen from './src/screens/AppointmentScreen';
 import LocationScreen from './src/screens/LocationScreen';
 import PunjabCardScreen from './src/screens/PunjabCardScreen';
+import ITTeamScreen from './src/screens/ITTeamScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -43,6 +44,7 @@ const ALLOWED_DEEP_LINK_ROUTES = new Set([
   'appointment',
   'location',
   'punjabcard',
+  'itteam',
 ]);
 
 const prefix = Linking.createURL('/');
@@ -63,6 +65,7 @@ const linking = {
       Appointment: 'appointment',
       Location: 'location',
       PunjabCard: 'punjabcard',
+      ITTeam: 'itteam',
     },
   },
   getStateFromPath(path) {
@@ -158,6 +161,7 @@ export default function App() {
         <Stack.Screen name="Appointment" component={AppointmentScreen} />
         <Stack.Screen name="Location" component={LocationScreen} />
         <Stack.Screen name="PunjabCard" component={PunjabCardScreen} />
+        <Stack.Screen name="ITTeam" component={ITTeamScreen} />
 
       </Stack.Navigator>
     </NavigationContainer>

@@ -27,7 +27,7 @@ const DEFAULT_SLIDES = [
     id: '2',
     image: PINUM_LOCAL_SLIDE_2,
     title: 'Advanced Gamma Camera',
-    desc: 'Highly accurate diagnostic imaging available 24/7.',
+    desc: 'Highly accurate diagnostic imaging & nuclear medicine.',
   },
   {
     id: '3',

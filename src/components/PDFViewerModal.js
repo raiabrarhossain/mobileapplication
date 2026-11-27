@@ -310,28 +310,68 @@ export default function PDFViewerModal({
                   if (pageNum > numPages) return;
 
                   pdf.getPage(pageNum).then(function(page) {
-                    var scale = 1.6;
-                    var viewport = page.getViewport({ scale: scale });
-                    var pageBox = document.createElement('div');
-                    pageBox.className = 'page-box';
+                    page.getTextContent().then(function(textContent) {
+                      var hasRealContent = true;
+                      if (pageNum > 1) {
+                        var textStr = (textContent.items || []).map(function(i) { return i.str; }).join(' ').trim();
+                        // If trailing page has no meaningful text or is practically blank, skip it
+                        if (!textStr || textStr.length < 15) {
+                          hasRealContent = false;
+                        }
+                      }
 
-                    var canvas = document.createElement('canvas');
-                    var context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
+                      if (!hasRealContent) {
+                        renderPage(pageNum + 1);
+                        return;
+                      }
 
-                    pageBox.appendChild(canvas);
-                    wrapper.appendChild(pageBox);
+                      var scale = 1.6;
+                      var viewport = page.getViewport({ scale: scale });
+                      var pageBox = document.createElement('div');
+                      pageBox.className = 'page-box';
 
-                    var renderContext = {
-                      canvasContext: context,
-                      viewport: viewport
-                    };
+                      var canvas = document.createElement('canvas');
+                      var context = canvas.getContext('2d');
+                      canvas.height = viewport.height;
+                      canvas.width = viewport.width;
 
-                    page.render(renderContext).promise.then(function() {
-                      renderPage(pageNum + 1);
-                    }).catch(function(e) {
-                      renderPage(pageNum + 1);
+                      pageBox.appendChild(canvas);
+                      wrapper.appendChild(pageBox);
+
+                      var renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                      };
+
+                      page.render(renderContext).promise.then(function() {
+                        renderPage(pageNum + 1);
+                      }).catch(function(e) {
+                        renderPage(pageNum + 1);
+                      });
+                    }).catch(function() {
+                      var scale = 1.6;
+                      var viewport = page.getViewport({ scale: scale });
+                      var pageBox = document.createElement('div');
+                      pageBox.className = 'page-box';
+
+                      var canvas = document.createElement('canvas');
+                      var context = canvas.getContext('2d');
+                      canvas.height = viewport.height;
+                      canvas.width = viewport.width;
+
+                      pageBox.appendChild(canvas);
+                      wrapper.appendChild(pageBox);
+
+                      var renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                      };
+
+                      page.render(renderContext).promise.then(function() {
+                        renderPage(pageNum + 1);
+                      }).catch(function(e) {
+                        renderPage(pageNum + 1);
+                      });
                     });
                   }).catch(function(err) {
                     renderPage(pageNum + 1);
